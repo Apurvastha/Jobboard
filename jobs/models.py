@@ -76,7 +76,7 @@ class JobListing(models.Model):
     class Meta:
         ordering = ['posted_at']
         indexes = [
-            models.Index(fields=['is_active', 'posted_at']),
+            models.Index(fields=['is_active', 'posted_at']), 
             models.Index(fields=['location']),
             models.Index(fields=['job_type'])
         ]
