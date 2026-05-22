@@ -77,7 +77,8 @@ class JobListing(models.Model):
         indexes = [
             models.Index(fields=['is_active', 'posted_at']), 
             models.Index(fields=['location']),
-            models.Index(fields=['job_type'])
+            models.Index(fields=['job_type']),
+            models.Index(fields=['salary_min']),
         ]
     def __str__(self):
         return f'{self.title} - {self.company}'
