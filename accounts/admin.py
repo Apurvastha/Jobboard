@@ -1,8 +1,7 @@
 from django.contrib import admin
 from django.db.models import Count
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-
-from jobs.admin import JobListingInline
+from jobs.models import JobListing
 from .models import User, CompanyProfile, CandidateProfile
 
 
@@ -19,7 +18,7 @@ class UserAdmin(BaseUserAdmin):
     ]
 
     list_filter = ['role', 'is_active', 'is_staff']
-    search_filters = ['email', 'username']
+    search_fields = ['email', 'username']
 
     #add role to the fieldsets
     fieldsets = BaseUserAdmin.fieldsets + (
@@ -38,8 +37,18 @@ class UserAdmin(BaseUserAdmin):
         ),
     )
 
+
+class JobListingInline(admin.TabularInline):
+    model = JobListing
+    extra = 0             # don't show empty extra forms
+    fields = ['title', 'job_type', 'is_active', 'posted_at']
+    readonly_fields = ['posted_at']
+    show_change_link = True   # link to full edit page
+
+    
 @admin.register(CompanyProfile)
 class CompanyProfileAdmin(admin.ModelAdmin):
+    
     list_display = ['name', 'user', 'country', 'founded_year', 'job_count']
     search_fields = ['name', 'user__email']
     list_select_related = ['user']

@@ -3,13 +3,6 @@ from django.contrib import admin
 from django.db.models import Count
 from .models import JobListing, Category, Tag
 
-class JobListingInline(admin.TabularInline):
-    model = JobListing
-    extra = 0             # don't show empty extra forms
-    fields = ['title', 'job_type', 'is_active', 'posted_at']
-    readonly_fields = ['posted_at']
-    show_change_link = True   # link to full edit page
-
     
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
