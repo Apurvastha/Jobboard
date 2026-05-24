@@ -77,11 +77,11 @@ Visit `http://127.0.0.1:8000/admin/` to access the admin panel.
 
 ## Environment Variables
 ```
-DJANGO_SECRET_KEY=
+DJANGO_SECRET_KEY= your_secret_key
 DEBUG=True
 DB_NAME=jobboard_db
 DB_USER=postgres
-DB_PASSWORD=
+DB_PASSWORD= your_password
 DB_HOST=localhost
 DB_PORT=5432
 ```
