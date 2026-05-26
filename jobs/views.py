@@ -1,9 +1,8 @@
-from django.views import View
 from django.views.generic import ListView, DetailView
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from . models import JobListing, Category
+from .forms import JobSearchForm
 
 
 
@@ -21,28 +20,34 @@ class JobListView(ListView):
             'tags'
         ).order_by('-posted_at')
 
-        #get query parameters for filtering
-        location = self.request.GET.get('location')
-        job_type = self.request.GET.get('job_type')
-        is_remote = self.request.GET.get('is_remote')
-        search = self.request.GET.get('search')
+        #validate query params through the form
+        form = JobSearchForm(self.request.GET)
+        if not form.is_valid():
+            return queryset
+        
+        cd = form.cleaned_data
 
 
         #apply filters if provided
-        if location:
-            queryset = queryset.filter(location__icontains=location)
- 
-        if job_type:
-            queryset = queryset.filter(job_type=job_type)
-
-        if is_remote:
-            queryset = queryset.filter(is_remote=is_remote.lower() == 'true')
-
-        if search:
+        if cd.get('search'):
             queryset = queryset.filter(
-                Q(title__icontains = search) |
-                Q(description__icontains = search)
-                )
+                Q(title__icontains=cd['search']) |
+                Q(description__icontains=cd['search'])
+            )
+        if cd.get('location'):
+            queryset = queryset.filter(location__icontains=cd['location'])
+        if cd.get('job_type'):
+            queryset = queryset.filter(job_type=cd['job_type'])
+        if cd.get('experience_level'):
+            queryset = queryset.filter(experience_level=cd['experience_level'])
+        if cd.get('salary_min'):
+            queryset = queryset.filter(salary_min__gte=cd['salary_min'])
+        if cd.get('salary_max'):
+            queryset = queryset.filter(salary_max__lte=cd['salary_max'])
+        if cd.get('is_remote'):
+            queryset = queryset.filter(is_remote=cd['is_remote'])
+        if cd.get('category'):
+            queryset = queryset.filter(category=cd['category'])
             
         return queryset
             
