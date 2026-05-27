@@ -18,6 +18,28 @@ class User(AbstractUser):
     def __str__(self):
         return self.email
     
+    #helper properties - clean role checks anywhere in the codebase
+    @property
+    def is_candidate(self):
+        return self.role == self.Role.CANDIDATE
+    
+    @property
+    def is_company(self):
+        return self.role == self.Role.COMPANY
+
+    @property
+    def is_admin(self):
+        return self.role == self.Role.ADMIN
+    
+    # check if user has completed their profile
+
+    @property
+    def has_company_profile(self):
+        return hasattr(self, 'company_profile')
+    
+    @property
+    def has_candidate_profile(self):
+        return hasattr(self, 'candidate_profile')
 class CompanyProfile(models.Model):
     user = models.OneToOneField(
         User,
