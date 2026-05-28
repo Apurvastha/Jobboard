@@ -60,7 +60,7 @@ def login_view(request):
     username = data.get('username')
     password = data.get('password')
 
-    #authenticate checks username + password against DB
+    # authenticate checks username + password against DB
     user = authenticate(request, username=username, password=password)
 
     if user is None:

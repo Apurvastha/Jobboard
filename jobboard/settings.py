@@ -57,6 +57,13 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+
+    # custom middleware
+    'jobboard.middleware.RequestLoggerMiddleware',
+    'jobboard.middleware.MaintenanceModeMiddleware',
+    'jobboard.middleware.RoleAuditMiddleware',
+    'jobboard.middleware.JsonExceptionMiddleware',
 ]
 
 ROOT_URLCONF = 'jobboard.urls'
@@ -141,15 +148,31 @@ AUTH_USER_MODEL = 'accounts.User'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
         },
     },
     'loggers': {
+        # your middleware logger
+        'jobboard.middleware': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+        # Django SQL query logger
         'django.db.backends': {
             'handlers': ['console'],
             'level': 'DEBUG',
         },
     },
 }
+
+
+MAINTENANCE_MODE = True
