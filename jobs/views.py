@@ -137,3 +137,8 @@ class JobsByCategoryView(DetailView):
             ]
         }
         return JsonResponse(data)
+    
+
+# add to jobs/views.py temporarily
+def broken_view(request):
+    raise ValueError("something went wrong")
