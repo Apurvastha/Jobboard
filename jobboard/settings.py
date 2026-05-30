@@ -166,6 +166,19 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'INFO',
         },
+        # signlas
+        'accounts.signals': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+        'applications.signals': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+        'jobs.signals': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
         # Django SQL query logger
         'django.db.backends': {
             'handlers': ['console'],
