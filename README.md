@@ -13,6 +13,8 @@ A production-ready job board REST API built with Django and Django REST Framewor
 
 ## Features
 
+## Features
+
 - [x] Multi-app architecture (accounts, jobs, applications, blog, notifications)
 - [x] Custom User model with roles (company / candidate / admin)
 - [x] Job listing, application, blog, and company models with full schema design
@@ -20,15 +22,21 @@ A production-ready job board REST API built with Django and Django REST Framewor
 - [x] Django Admin configured for all models with bulk actions and inlines
 - [x] Query optimisation with select_related and prefetch_related (N+1 free)
 - [x] EXPLAIN ANALYZE query plan analysis
-- [ ] JWT authentication with role-based permissions
-- [ ] Job listing CRUD with filtering and full-text search
-- [ ] Application system with status tracking
-- [ ] Async email notifications via Celery
-- [ ] REST API with Swagger / OpenAPI docs
-- [ ] 80%+ test coverage with pytest
-- [ ] Dockerized with docker-compose
-- [ ] CI/CD pipeline with GitHub Actions
-- [ ] Deployed to Railway
+- [x] Function-based and class-based views with filtering
+- [x] Form validation for search and job creation
+- [x] Auth system — registration, login, logout, role-based access
+- [x] Custom middleware — request logging, audit trail, error handling
+- [x] Signals — auto profile creation, application notifications
+- [ ] JWT authentication with role-based permissions (Week 4)
+- [ ] DRF serializers and viewsets (Week 4)
+- [ ] Job listing CRUD with filtering and full-text search (Week 4)
+- [ ] Application system with status tracking (Week 4)
+- [ ] Async email notifications via Celery (Week 5)
+- [ ] REST API with Swagger / OpenAPI docs (Week 4)
+- [ ] 80%+ test coverage with pytest (Week 7)
+- [ ] Dockerized with docker-compose (Week 6)
+- [ ] CI/CD pipeline with GitHub Actions (Week 6)
+- [ ] Deployed to Railway (Week 8)
 
 ## Database Schema
 
