@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
     #third party 
     'django_extensions',
+    'rest_framework',
 
     #local apps
     'accounts.apps.AccountsConfig',
@@ -48,6 +49,28 @@ INSTALLED_APPS = [
     'notifications.apps.NotificationsConfig',
     'blog.apps.BlogConfig',
 ]
+
+# settings.py — add this anywhere after INSTALLED_APPS
+REST_FRAMEWORK = {
+    # default auth — we'll change this to JWT on Day 4
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+
+    # default permission — allow read, require auth for write
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+
+    # default pagination — always paginate
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+
+    # default renderer — JSON only for API
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
