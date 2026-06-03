@@ -1,7 +1,8 @@
+from django.core.cache import cache
 import logging
-from django.db.models.signals import pre_delete, post_save
+from django.db.models.signals import pre_delete, post_save, post_delete
 from django.dispatch import receiver, Signal
-from .models import JobListing
+from .models import JobListing, Category
 
 
 
@@ -32,3 +33,8 @@ def log_job_listing_deletion(sender, instance, **kwargs):
         f'company={instance.company.name}'
         f'application_count={instance.applications.count()}' 
     )
+
+@receiver([post_save,post_delete], sender=Category)
+def invalidate_category_cache(sender, instance, **kwargs):
+    cache.delete('all_categories')
+    

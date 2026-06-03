@@ -9,6 +9,11 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
+import environ
+import os
+
+env = environ.Env()
+environ.Env.read_env()
 
 from pathlib import Path
 
@@ -69,6 +74,7 @@ REST_FRAMEWORK = {
     # default renderer — JSON only for API
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
     ],
 }
 
@@ -113,15 +119,18 @@ WSGI_APPLICATION = 'jobboard.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
+       'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'jobboard_db',
-        'USER': 'postgres',
-        'PASSWORD': 'r3ap3r12cr3S#',
-        'HOST': 'localhost',   # 'db' when using Docker Compose
-        'PORT': '5432',
+        'NAME': env('DB_NAME', default='jobboard_db'),
+        'USER': env('DB_USER', default='postgres'),
+        'PASSWORD': env('DB_PASSWORD', default='postgres'),
+        'HOST': env('DB_HOST', default='localhost'),  # 'db' in Docker
+        'PORT': env('DB_PORT', default='5432'),
     }
 }
+
+# Redis — single URL config
+REDIS_URL = env('REDIS_URL', default='redis://127.0.0.1:6379/0')
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -212,3 +221,13 @@ LOGGING = {
 
 
 MAINTENANCE_MODE = False
+
+CACHES = {
+     'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': env('REDIS_URL', default='redis://127.0.0.1:6379/1'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}

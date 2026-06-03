@@ -1,5 +1,8 @@
+import time
+from django.core.cache import cache
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.generics import GenericAPIView
 from rest_framework import status, generics
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.shortcuts import get_object_or_404
@@ -85,7 +88,24 @@ class JobDetailView(generics.RetrieveUpdateDestroyAPIView):
         instance.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
-class CategoryListView(generics.ListAPIView):
-    queryset = Category.objects.all()
+class CategoryListView(GenericAPIView):
     serializer_class = CategorySerializer
-        
+    queryset = Category.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        cache_key = "all_categories"
+        cached = cache.get(cache_key)
+
+        if cached:
+            return Response(cached)
+
+
+        time.sleep(2)  # visualize cache miss for now
+
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+
+        cache.set(cache_key, data, timeout=3600)
+
+        return Response(data)
