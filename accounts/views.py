@@ -69,9 +69,6 @@ class CandidateProfileView(APIView):
                 {'error': 'Only candidates can update their profiles.'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        profile, created = request.user.__class__.objects.get_or_create(
-            pk = request.user.pk
-        )
         from .models import CandidateProfile
         profile, _ = CandidateProfile.objects.get_or_create(
             user=request.user
@@ -84,7 +81,7 @@ class CandidateProfileView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_NOT_FOUND)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
 class CompanyProfileView(APIView):

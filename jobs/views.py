@@ -100,7 +100,7 @@ class CategoryListView(GenericAPIView):
             return Response(cached)
 
 
-        time.sleep(2)  # visualize cache miss for now
+        # time.sleep(2)  # visualize cache miss for now
 
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)

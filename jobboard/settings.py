@@ -59,7 +59,7 @@ INSTALLED_APPS = [
 REST_FRAMEWORK = {
     # default auth — we'll change this to JWT on Day 4
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
 
     # default permission — allow read, require auth for write
