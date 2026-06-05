@@ -23,7 +23,7 @@ admin.site.index_title = 'Dashboard'
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/v1/jobs/', include('jobs.urls', namespace= 'jobs')),
+    path('api/v1/jobs/', include('jobs.urls', namespace='jobs')),
     path('api/v1/accounts/', include('accounts.urls', namespace= 'accounts')),
     path('api/v1/applications/', include('applications.urls', namespace= 'applications')),
 ]
