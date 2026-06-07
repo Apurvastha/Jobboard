@@ -17,6 +17,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class CompanySerializer(serializers.ModelSerializer):
+
     class Meta:
         model = CompanyProfile
         fields = ['id', 'name', 'website', 'country']
@@ -63,7 +64,9 @@ class JobListingSerializer(serializers.ModelSerializer):
     company_id = serializers.PrimaryKeyRelatedField(
         queryset=CompanyProfile.objects.all(),
         source='company',
-        write_only=True
+        write_only=True,
+        required = False,
+        allow_null = True,
     )
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(),

@@ -9,6 +9,8 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
+from datetime import timedelta
+
 import environ
 import os
 
@@ -57,7 +59,7 @@ INSTALLED_APPS = [
 
 # settings.py — add this anywhere after INSTALLED_APPS
 REST_FRAMEWORK = {
-    # default auth — we'll change this to JWT on Day 4
+   
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
@@ -76,6 +78,30 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ],
+}
+
+SIMPLE_JWT = {
+    # TTL for access tokens
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+
+    # TTL for refresh token
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+
+    # if True - each refresh call ratates the refresh token
+    # olf refresh token is invalidated, new one issued
+    # more secure - limits refresh token reuse
+    'ROTATE_REFRESH_TOKENS': True,
+
+    # if True - old refresh token are blacklisted after rotation
+    # requires token_blacklist app in INSTALLED_APPS
+    'BLACKLIST_AFTER_ROTATION': True,
+
+    #  the header type - Authorization: Bearer <token>
+    'AUTH_HEADER_TYPES': ('Bearer',),
+
+    # what field from User model goes into token
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id'
 }
 
 MIDDLEWARE = [

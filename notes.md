@@ -1,0 +1,23 @@
+{
+    "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzgwODU0ODMwLCJpYXQiOjE3ODA4NTEyMzAsImp0aSI6ImRkMjMwNTI2NzI2YjQ5MDdiNDcyMDgyYmJkZDZhMWU4IiwidXNlcl9pZCI6IjEyIiwidXNlcm5hbWUiOiJhcHVydmEiLCJlbWFpbCI6ImFwdXJ2YUB0ZXN0LmNvbSIsInJvbGUiOiJjYW5kaWRhdGUifQ.1qyNVPeb9ECN2yqD10pbuMilVTfm-mFPhiiuFwB2yag",
+    "email": "apurva@test.com",
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4MTQ1NjAzMCwiaWF0IjoxNzgwODUxMjMwLCJqdGkiOiIyNmI2NjkzYjcwYjI0Y2Y4YTY2Mzc3ZmIwZmM0Y2M2NyIsInVzZXJfaWQiOiIxMiIsInVzZXJuYW1lIjoiYXB1cnZhIiwiZW1haWwiOiJhcHVydmFAdGVzdC5jb20iLCJyb2xlIjoiY2FuZGlkYXRlIn0.wJO-gbcDrxPujvumkyfT0-FltggrnxlCTezvYGELCNA",
+    "role": "candidate",
+    "user_id": 12,
+    "username": "apurva"
+}
+
+http POST http://127.0.0.1:8000/api/v1/accounts/token/refresh/ refresh=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4MTQ1NjAzMCwiaWF0IjoxNzgwODUxMjMwLCJqdGkiOiIyNmI2NjkzYjcwYjI0Y2Y4YTY2Mzc3ZmIwZmM0Y2M2NyIsInVzZXJfaWQiOiIxMiIsInVzZXJuYW1lIjoiYXB1cnZhIiwiZW1haWwiOiJhcHVydmFAdGVzdC5jb20iLCJyb2xlIjoiY2FuZGlkYXRlIn0.wJO-gbcDrxPujvumkyfT0-FltggrnxlCTezvYGELCNA
+
+http POST http://127.0.0.1:8000/api/v1/jobs/ "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzgwODU0ODMwLCJpYXQiOjE3ODA4NTEyMzAsImp0aSI6ImRkMjMwNTI2NzI2YjQ5MDdiNDcyMDgyYmJkZDZhMWU4IiwidXNlcl9pZCI6IjEyIiwidXNlcm5hbWUiOiJhcHVydmEiLCJlbWFpbCI6ImFwdXJ2YUB0ZXN0LmNvbSIsInJvbGUiOiJjYW5kaWRhdGUifQ.1qyNVPeb9ECN2yqD10pbuMilVTfm-mFPhiiuFwB2yag" title="Test Job"
+
+http POST http://127.0.0.1:8000/api/v1/jobs/ `
+"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzgwODU1NDY4LCJpYXQiOjE3ODA4NTE4NjgsImp0aSI6ImUzM2VlMWY0OGI4MTQ5NzhiYzk1MjA4ODRkYmM3OTQ0IiwidXNlcl9pZCI6IjIiLCJ1c2VybmFtZSI6Im1lcmNhcmkiLCJlbWFpbCI6ImhpcmVAbWVyY2FyaS5jb20iLCJyb2xlIjoiY29tcGFueSJ9.3bD3ZKydRAyJAqnD4eIhbvvBeXIHqJZZ6OkSl1IrVLw" `
+title="Senior Python Engineer Tokyo" `
+description="We need a senior Python engineer with Django and DRF experience." `
+job_type=full_time `
+experience_level=senior `
+location=Tokyo `
+is_remote=false `
+salary_min=8000000 `
+salary_max=12000000

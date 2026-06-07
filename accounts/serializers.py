@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from .models import User, CompanyProfile, CandidateProfile
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 class CandidateProfileSerializer(serializers.ModelSerializer):
@@ -130,3 +131,40 @@ class RegisterCompanySerializer(serializers.ModelSerializer):
         )
 
         return user
+    
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+
+    @classmethod
+    def get_token(cls, user):
+        #call parent to get the base token
+        token = super().get_token(user)
+
+        # add custom claims to the payload
+        token['username'] = user.username
+        token['email'] = user.email
+        token['role'] = user.role
+
+        # token payload looks like:
+        # {
+        #   "user_id": 6,
+        #   "username": "alice",
+        #   "email": "alice@test.com",
+        #   "role": "candidate",
+        #   "exp": ...,
+        #   "iat": ...
+        # }
+        return token
+    
+    def validate(self, attrs):
+        # call parent validation - checks username + password
+        data = super().validate(attrs)
+
+        # add extra data to the login response
+        # this is separate from the token claims
+        data['user_id'] = self.user.id
+        data['username'] = self.user.username
+        data['email'] = self.user.email
+        data['role'] = self.user.role
+
+        return data
+    
