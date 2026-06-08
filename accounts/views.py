@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import CustomTokenObtainPairSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from . permissions import IsCandidate
 from .serializers import (
     RegisterCandidateSerializer,
     RegisterCompanySerializer,
@@ -47,14 +48,10 @@ class MeView(APIView):
         return Response(serializer.data)
     
 class CandidateProfileView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsCandidate]
 
     def get(self, request):
-        if not request.user.is_candidate:
-            return Response(
-                {'error': 'Only candidates have a candidate profile.'},
-                status= status.HTTP_403_FORBIDDEN
-            )
+       
         if not request.user.has_candidate_profile:
             return Response(
                 {'error': 'Profile not found'},
@@ -66,11 +63,7 @@ class CandidateProfileView(APIView):
         return Response(serializer.data)
     
     def patch(self, request):
-        if not request.user.is_candidate:
-            return Response(
-                {'error': 'Only candidates can update their profiles.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        
         from .models import CandidateProfile
         profile, _ = CandidateProfile.objects.get_or_create(
             user=request.user

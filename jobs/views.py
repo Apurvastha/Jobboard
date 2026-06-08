@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import  IsAuthenticatedOrReadOnly
+from rest_framework.permissions import   AllowAny, IsAuthenticated
+from accounts.permissions import  IsOwnerOrReadOnly, IsCompany
 from django.db.models import Q
 from .models import JobListing, Category
 from .serializers import (
@@ -13,7 +14,20 @@ from .serializers import (
 )
 
 class JobListingViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'featured', 'similar']:
+            # read actions - anyone
+            return [AllowAny()]
+        
+        if self.action == 'create':
+            # creating - must be a company
+            return [IsCompany()]
+        
+        if self.action in ['update', 'partial_update', 'destroy']:
+            # modifying - must be the owner
+            return [IsOwnerOrReadOnly()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         queryset = JobListing.objects.filter(
@@ -57,34 +71,11 @@ class JobListingViewSet(viewsets.ModelViewSet):
         return JobListingSerializer
     
     def perform_create(self, serializer):
-        # check role before creating
-        if not self.request.user.is_company:
-            from rest_framework.exceptions import PermissionDenied
-            raise PermissionDenied('Only company accounts can post jobs.')
-
-        if not self.request.user.has_company_profile:
-            from rest_framework.exceptions import PermissionDenied
-            raise PermissionDenied('Complete your company profile first.')
-        
         serializer.save(
             company = self.request.user.company_profile,
             is_active = True
         )
     
-    def create(self, request, *args, **kwargs):
-    # check role BEFORE serializer validation runs
-        if not request.user.is_company:
-            return Response(
-                {'error': 'Only company accounts can post jobs.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        if not request.user.has_company_profile:
-            return Response(
-                {'error': 'Complete your company profile first.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        return super().create(request, *args, **kwargs)
-        
     def destroy(self, request, *args, **kwargs):
         # soft delete - never actually delete from the database
         instance = self.get_object()
