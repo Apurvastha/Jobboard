@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'rest_framework',
     'django_filters',
+    'drf_spectacular',
 
     #local apps
     'accounts.apps.AccountsConfig',
@@ -70,6 +71,8 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
+
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 
     # default permission — allow read, require auth for write
     'DEFAULT_PERMISSION_CLASSES': [
@@ -263,4 +266,34 @@ CACHES = {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }
     }
+}
+
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'JobBoard API',
+    'DESCRIPTION': '''
+        A production-ready job board REST API built with Django and DRF.
+        
+        Features
+        - JWT authentication with role-based access (company / candidate / admin)
+        - Job listing CRUD with advanced filtering and full-text search
+        - Application tracking system
+        - Redis caching for performance
+        - Dockerized with PostgreSQL and Redis
+    ''',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+
+    # group endpoints by app
+    'SCHEMA_PATH_PREFIX': '/api/v1/',
+
+    # show authentication button in Swagger UI
+    'SWAGGER_UI_SETTINGS': {
+        'persistAuthorization': True,   # keeps token after page refresh
+        'displayRequestDuration': True, # shows how long each request took
+        'filter': True,                 # search box to filter endpoints
+    },
+
+    # security scheme — tells Swagger how to send the JWT token
+    'SECURITY': [{'bearerAuth': []}],
 }

@@ -6,6 +6,8 @@ from rest_framework.decorators import action
 from rest_framework.permissions import   AllowAny, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from drf_spectacular.types import OpenApiTypes
 from .filters import JobListingFilter
 from .pagination import JobListingPagination
 from accounts.permissions import  IsOwnerOrReadOnly, IsCompany
@@ -16,6 +18,7 @@ from .serializers import (
     CategorySerializer,
 )
 
+@extend_schema(tags=['Jobs'])
 class JobListingViewSet(viewsets.ModelViewSet):
     
     pagination_class = JobListingPagination
@@ -70,7 +73,6 @@ class JobListingViewSet(viewsets.ModelViewSet):
             'tags'
         ).order_by('-posted_at')
 
-    
     def get_serializer_class(self):
         # list action uses lightweight serializer
         if self.action == 'list':
@@ -84,6 +86,11 @@ class JobListingViewSet(viewsets.ModelViewSet):
             is_active = True
         )
     
+    @extend_schema(
+        summary='Soft delete a job listing',
+        description='Sets is_active=False instead of deleting from database.',
+        responses={204: None},
+    )
     def destroy(self, request, *args, **kwargs):
         # soft delete - never actually delete from the database
         instance = self.get_object()
@@ -91,6 +98,75 @@ class JobListingViewSet(viewsets.ModelViewSet):
         instance.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
+    @extend_schema(
+        summary='List all active job listings',
+        description='''
+            Returns a paginated list of active job listings.
+            Supports filtering by location, job type, experience level,
+            salary range, and remote status. Supports full-text search
+            across title, description, and company name.
+        ''',
+        parameters=[
+            OpenApiParameter(
+                name='search',
+                type=OpenApiTypes.STR,
+                description='Search across title, description, and company name',
+            ),
+            OpenApiParameter(
+                name='ordering',
+                type=OpenApiTypes.STR,
+                description='Sort by: posted_at, salary_min, salary_max, title. Prefix with - for descending.',
+                examples=[
+                    OpenApiExample('Highest paying first', value='-salary_max'),
+                    OpenApiExample('Newest first', value='-posted_at'),
+                ]
+            ),
+        ],
+        responses={200: JobListingListSerializer(many=True)},
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        summary='Create a new job listing',
+        description='Only company accounts can create job listings.',
+        responses={
+            201: JobListingSerializer,
+            403: OpenApiTypes.OBJECT,
+        },
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @extend_schema(
+        summary='Get job listing details',
+        responses={200: JobListingSerializer},
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+    
+    @extend_schema(
+    summary="Update a job listing",
+    description="Fully updates a job listing. All required fields must be provided.",
+    responses={200: JobListingSerializer},
+)
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+    
+    @extend_schema(
+    summary="Partially update a job listing",
+    description="Updates only the fields provided in the request.",
+    responses={200: JobListingSerializer},
+)
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+
+    @extend_schema(
+        summary='Get featured job listings',
+        description='Returns top 5 highest paying active jobs.',
+        responses={200: JobListingListSerializer(many=True)},
+    )
     @action(detail=False, methods=['get'])
     def featured(self, request):
         # return top 5 highest paying jobs
@@ -105,6 +181,11 @@ class JobListingViewSet(viewsets.ModelViewSet):
         serializer = JobListingListSerializer(jobs, many=True)
         return Response(serializer.data)
     
+    @extend_schema(
+        summary='Get similar job listings',
+        description='Returns jobs in the same category as the specified job.',
+        responses={200: JobListingListSerializer(many=True)},
+    )
     @action(detail=True, methods=['get'])
     def similar(self, request, pk=None):
         job = self.get_object()
@@ -122,6 +203,12 @@ class JobListingViewSet(viewsets.ModelViewSet):
         serializer = JobListingListSerializer(similar_jobs, many = True)
         return Response(serializer.data)
 
+@extend_schema(
+    tags=['Jobs'],
+    summary='List all job categories',
+    description='Returns cached list of all job categories. Cache refreshes every hour.',
+    responses={200: CategorySerializer(many=True)},
+)
 class CategoryListView(GenericAPIView):
     serializer_class = CategorySerializer
     queryset = Category.objects.all()

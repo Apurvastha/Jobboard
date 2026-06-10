@@ -1,0 +1,1144 @@
+openapi: 3.0.3
+info:
+  title: JobBoard API
+  version: 1.0.0
+  description: "\n        A production-ready job board REST API built with Django
+    and DRF.\n        \n        Features\n        - JWT authentication with role-based
+    access (company / candidate / admin)\n        - Job listing CRUD with advanced
+    filtering and full-text search\n        - Application tracking system\n        -
+    Redis caching for performance\n        - Dockerized with PostgreSQL and Redis\n
+    \   "
+paths:
+  /api/v1/accounts/me/:
+    get:
+      operationId: accounts_me_retrieve
+      summary: Get current user
+      tags:
+      - Profile
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/accounts/profile/candidate/:
+    get:
+      operationId: accounts_profile_candidate_retrieve
+      summary: Candidate Profile
+      tags:
+      - Profile
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: accounts_profile_candidate_partial_update
+      summary: Edit Candidate Profile
+      tags:
+      - Profile
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/accounts/profile/company/:
+    get:
+      operationId: accounts_profile_company_retrieve
+      summary: Company Profile
+      tags:
+      - Profile
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: accounts_profile_company_partial_update
+      summary: Edit Company Profile
+      tags:
+      - Profile
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/accounts/register/candidate/:
+    post:
+      operationId: accounts_register_candidate_create
+      summary: Register Candidate
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterCandidate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegisterCandidate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterCandidate'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterCandidate'
+          description: ''
+  /api/v1/accounts/register/company/:
+    post:
+      operationId: accounts_register_company_create
+      summary: Register Company
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterCompany'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegisterCompany'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterCompany'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterCompany'
+          description: ''
+  /api/v1/accounts/token/:
+    post:
+      operationId: accounts_token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      summary: Login
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPair'
+        required: true
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomTokenObtainPair'
+          description: ''
+  /api/v1/accounts/token/refresh/:
+    post:
+      operationId: accounts_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/jobs/:
+    get:
+      operationId: jobs_list
+      description: "\n            Returns a paginated list of active job listings.\n
+        \           Supports filtering by location, job type, experience level,\n
+        \           salary range, and remote status. Supports full-text search\n            across
+        title, description, and company name.\n        "
+      summary: List all active job listings
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: query
+        name: category_slug
+        schema:
+          type: string
+      - in: query
+        name: experience_level
+        schema:
+          type: string
+          enum:
+          - junior
+          - mid
+          - senior
+        description: |-
+          * `junior` - Junior
+          * `mid` - Mid
+          * `senior` - Senior
+      - in: query
+        name: is_remote
+        schema:
+          type: boolean
+      - in: query
+        name: job_type
+        schema:
+          type: string
+          enum:
+          - contract
+          - full_time
+          - internship
+          - part_time
+        description: |-
+          * `full_time` - Full Time
+          * `part_time` - Part Time
+          * `contract` - Contract
+          * `internship` - Internship
+      - in: query
+        name: location
+        schema:
+          type: string
+      - in: query
+        name: max_salary
+        schema:
+          type: integer
+      - in: query
+        name: min_salary
+        schema:
+          type: integer
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: 'Sort by: posted_at, salary_min, salary_max, title. Prefix with
+          - for descending.'
+        examples:
+          HighestPayingFirst:
+            value: -salary_max
+            summary: Highest paying first
+          NewestFirst:
+            value: -posted_at
+            summary: Newest first
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: posted_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: posted_before
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: salary_max
+        schema:
+          type: integer
+      - in: query
+        name: salary_min
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Search across title, description, and company name
+      tags:
+      - Jobs
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedJobListingListList'
+          description: ''
+    post:
+      operationId: jobs_create
+      description: Only company accounts can create job listings.
+      summary: Create a new job listing
+      tags:
+      - Jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobListing'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/JobListing'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/JobListing'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobListing'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/jobs/{id}/:
+    get:
+      operationId: jobs_retrieve
+      summary: Get job listing details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job listing.
+        required: true
+      tags:
+      - Jobs
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobListing'
+          description: ''
+    put:
+      operationId: jobs_update
+      description: Fully updates a job listing. All required fields must be provided.
+      summary: Update a job listing
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job listing.
+        required: true
+      tags:
+      - Jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobListing'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/JobListing'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/JobListing'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobListing'
+          description: ''
+    patch:
+      operationId: jobs_partial_update
+      description: Updates only the fields provided in the request.
+      summary: Partially update a job listing
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job listing.
+        required: true
+      tags:
+      - Jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedJobListing'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedJobListing'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedJobListing'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobListing'
+          description: ''
+    delete:
+      operationId: jobs_destroy
+      description: Sets is_active=False instead of deleting from database.
+      summary: Soft delete a job listing
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job listing.
+        required: true
+      tags:
+      - Jobs
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/jobs/{id}/similar/:
+    get:
+      operationId: jobs_similar_list
+      description: Returns jobs in the same category as the specified job.
+      summary: Get similar job listings
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: query
+        name: category_slug
+        schema:
+          type: string
+      - in: query
+        name: experience_level
+        schema:
+          type: string
+          enum:
+          - junior
+          - mid
+          - senior
+        description: |-
+          * `junior` - Junior
+          * `mid` - Mid
+          * `senior` - Senior
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job listing.
+        required: true
+      - in: query
+        name: is_remote
+        schema:
+          type: boolean
+      - in: query
+        name: job_type
+        schema:
+          type: string
+          enum:
+          - contract
+          - full_time
+          - internship
+          - part_time
+        description: |-
+          * `full_time` - Full Time
+          * `part_time` - Part Time
+          * `contract` - Contract
+          * `internship` - Internship
+      - in: query
+        name: location
+        schema:
+          type: string
+      - in: query
+        name: max_salary
+        schema:
+          type: integer
+      - in: query
+        name: min_salary
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: posted_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: posted_before
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: salary_max
+        schema:
+          type: integer
+      - in: query
+        name: salary_min
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Jobs
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedJobListingListList'
+          description: ''
+  /api/v1/jobs/categories/:
+    get:
+      operationId: jobs_categories_list
+      description: Returns cached list of all job categories. Cache refreshes every
+        hour.
+      summary: List all job categories
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Jobs
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+  /api/v1/jobs/featured/:
+    get:
+      operationId: jobs_featured_list
+      description: Returns top 5 highest paying active jobs.
+      summary: Get featured job listings
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: query
+        name: category_slug
+        schema:
+          type: string
+      - in: query
+        name: experience_level
+        schema:
+          type: string
+          enum:
+          - junior
+          - mid
+          - senior
+        description: |-
+          * `junior` - Junior
+          * `mid` - Mid
+          * `senior` - Senior
+      - in: query
+        name: is_remote
+        schema:
+          type: boolean
+      - in: query
+        name: job_type
+        schema:
+          type: string
+          enum:
+          - contract
+          - full_time
+          - internship
+          - part_time
+        description: |-
+          * `full_time` - Full Time
+          * `part_time` - Part Time
+          * `contract` - Contract
+          * `internship` - Internship
+      - in: query
+        name: location
+        schema:
+          type: string
+      - in: query
+        name: max_salary
+        schema:
+          type: integer
+      - in: query
+        name: min_salary
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: posted_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: posted_before
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: salary_max
+        schema:
+          type: integer
+      - in: query
+        name: salary_min
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Jobs
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedJobListingListList'
+          description: ''
+components:
+  schemas:
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        slug:
+          type: string
+          maxLength: 100
+          pattern: ^[-a-zA-Z0-9_]+$
+      required:
+      - id
+      - name
+      - slug
+    Company:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        website:
+          type: string
+          format: uri
+          maxLength: 200
+        country:
+          type: string
+          maxLength: 100
+      required:
+      - id
+      - name
+    CustomTokenObtainPair:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - password
+      - username
+    ExperienceLevelEnum:
+      enum:
+      - junior
+      - mid
+      - senior
+      type: string
+      description: |-
+        * `junior` - Junior
+        * `mid` - Mid
+        * `senior` - Senior
+    JobListing:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        company:
+          allOf:
+          - $ref: '#/components/schemas/Company'
+          readOnly: true
+        company_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/Category'
+          readOnly: true
+        category_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+          readOnly: true
+        tag_ids:
+          type: array
+          items:
+            type: integer
+            writeOnly: true
+          writeOnly: true
+        job_type:
+          $ref: '#/components/schemas/JobTypeEnum'
+        experience_level:
+          $ref: '#/components/schemas/ExperienceLevelEnum'
+        location:
+          type: string
+          maxLength: 200
+        is_remote:
+          type: boolean
+        salary_min:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        salary_max:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        is_active:
+          type: boolean
+          readOnly: true
+        deadline:
+          type: string
+          format: date
+          nullable: true
+        posted_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        application_count:
+          type: string
+          readOnly: true
+        salary_range:
+          type: string
+          readOnly: true
+      required:
+      - application_count
+      - category
+      - company
+      - description
+      - id
+      - is_active
+      - location
+      - posted_at
+      - salary_range
+      - tags
+      - title
+      - updated_at
+    JobListingList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        company_name:
+          type: string
+          readOnly: true
+        category_name:
+          type: string
+          readOnly: true
+          nullable: true
+        job_type:
+          $ref: '#/components/schemas/JobTypeEnum'
+        experience_level:
+          $ref: '#/components/schemas/ExperienceLevelEnum'
+        location:
+          type: string
+          maxLength: 200
+        is_remote:
+          type: boolean
+        salary_min:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        salary_max:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+          readOnly: true
+        posted_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - category_name
+      - company_name
+      - id
+      - location
+      - posted_at
+      - tags
+      - title
+    JobTypeEnum:
+      enum:
+      - full_time
+      - part_time
+      - contract
+      - internship
+      type: string
+      description: |-
+        * `full_time` - Full Time
+        * `part_time` - Part Time
+        * `contract` - Contract
+        * `internship` - Internship
+    PaginatedCategoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+    PaginatedJobListingListList:
+      type: object
+      properties:
+        count:
+          type: integer
+        total_pages:
+          type: integer
+        current_page:
+          type: integer
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobListingList'
+    PatchedJobListing:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        company:
+          allOf:
+          - $ref: '#/components/schemas/Company'
+          readOnly: true
+        company_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/Category'
+          readOnly: true
+        category_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+          readOnly: true
+        tag_ids:
+          type: array
+          items:
+            type: integer
+            writeOnly: true
+          writeOnly: true
+        job_type:
+          $ref: '#/components/schemas/JobTypeEnum'
+        experience_level:
+          $ref: '#/components/schemas/ExperienceLevelEnum'
+        location:
+          type: string
+          maxLength: 200
+        is_remote:
+          type: boolean
+        salary_min:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        salary_max:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        is_active:
+          type: boolean
+          readOnly: true
+        deadline:
+          type: string
+          format: date
+          nullable: true
+        posted_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        application_count:
+          type: string
+          readOnly: true
+        salary_range:
+          type: string
+          readOnly: true
+    RegisterCandidate:
+      type: object
+      properties:
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+        password2:
+          type: string
+          writeOnly: true
+      required:
+      - password
+      - password2
+      - username
+    RegisterCompany:
+      type: object
+      properties:
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+        password2:
+          type: string
+          writeOnly: true
+        company_name:
+          type: string
+          writeOnly: true
+          maxLength: 200
+        website:
+          type: string
+          format: uri
+          writeOnly: true
+        country:
+          type: string
+          writeOnly: true
+          default: Japan
+          maxLength: 100
+      required:
+      - company_name
+      - password
+      - password2
+      - username
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 50
+      required:
+      - id
+      - name
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

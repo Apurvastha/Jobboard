@@ -5,6 +5,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import CustomTokenObtainPairSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from . permissions import IsCandidate
+from drf_spectacular.utils import extend_schema
 from .serializers import (
     RegisterCandidateSerializer,
     RegisterCompanySerializer,
@@ -13,7 +14,7 @@ from .serializers import (
     CompanyProfileSerializer,
 )
 
-
+@extend_schema(tags=['Authentication'], summary='Register Candidate')
 class RegisterCandidateView(generics.CreateAPIView):
     serializer_class = RegisterCandidateSerializer
     permission_classes = [AllowAny]
@@ -26,7 +27,7 @@ class RegisterCandidateView(generics.CreateAPIView):
             UserSerializer(user).data,
             status=status.HTTP_201_CREATED
         )
-    
+@extend_schema(tags=['Authentication'], summary='Register Company')
 class RegisterCompanyView(generics.CreateAPIView):
     serializer_class = RegisterCompanySerializer
     permission_classes = [AllowAny]
@@ -39,14 +40,14 @@ class RegisterCompanyView(generics.CreateAPIView):
             UserSerializer(user).data,
             status=status.HTTP_201_CREATED
         )
-    
+@extend_schema(tags=['Profile'], summary='Get current user')
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
-    
+@extend_schema(tags=['Profile'], summary='Candidate Profile')  
 class CandidateProfileView(APIView):
     permission_classes = [IsAuthenticated, IsCandidate]
 
@@ -62,6 +63,7 @@ class CandidateProfileView(APIView):
         )
         return Response(serializer.data)
     
+    @extend_schema(summary='Edit Candidate Profile')
     def patch(self, request):
         
         from .models import CandidateProfile
@@ -77,8 +79,7 @@ class CandidateProfileView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-
+@extend_schema(tags=['Profile'], summary='Company Profile')
 class CompanyProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -95,6 +96,7 @@ class CompanyProfileView(APIView):
 
         return Response(serializer.data)
     
+    @extend_schema(summary='Edit Company Profile')
     def patch(self, request):
         if not request.user.is_company:
             return Response(
@@ -110,6 +112,6 @@ class CompanyProfileView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+@extend_schema(tags=['Authentication'], summary='Login')
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer

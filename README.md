@@ -11,7 +11,6 @@ A production-ready job board REST API built with Django and Django REST Framewor
 - **CI/CD:** GitHub Actions
 - **Deployment:** Railway
 
-## Features
 
 ## Features
 
@@ -27,18 +26,17 @@ A production-ready job board REST API built with Django and Django REST Framewor
 - [x] Auth system — registration, login, logout, role-based access
 - [x] Custom middleware — request logging, audit trail, error handling
 - [x] Signals — auto profile creation, application notifications
-- [ ] JWT authentication with role-based permissions (Week 4)
-- [ ] DRF serializers and viewsets (Week 4)
-- [ ] Job listing CRUD with filtering and full-text search (Week 4)
-- [ ] Application system with status tracking (Week 4)
-- [ ] Async email notifications via Celery (Week 5)
-- [ ] REST API with Swagger / OpenAPI docs (Week 4)
-- [ ] 80%+ test coverage with pytest (Week 7)
-- [ ] Dockerized with docker-compose (Week 6)
-- [ ] CI/CD pipeline with GitHub Actions (Week 6)
-- [ ] Deployed to Railway (Week 8)
+- [x] JWT authentication with role-based permissions 
+- [x] DRF serializers and viewsets 
+- [x] Job listing CRUD with filtering and full-text search 
+- [ ] Application system with status tracking 
+- [ ] Async email notifications via Celery 
+- [x] REST API with Swagger / OpenAPI docs 
+- [ ] 80%+ test coverage with pytest 
+- [x] Dockerized with docker-compose 
+- [ ] CI/CD pipeline with GitHub Actions 
+- [ ] Deployed to Railway 
 
-## Database Schema
 
 ## Database Schema
 
@@ -93,6 +91,14 @@ DB_PASSWORD= your_password
 DB_HOST=localhost
 DB_PORT=5432
 ```
+## API Documentation
+
+Interactive API documentation is available at:
+
+- **Swagger UI:** http://localhost:8000/api/schema/swagger-ui/
+- **ReDoc:** http://localhost:8000/api/schema/redoc/
+- **OpenAPI Schema:** http://localhost:8000/api/schema/
+
 ## Project Status
 
 Actively in development. New features added regularly.
