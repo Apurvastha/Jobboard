@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     #third party 
     'django_extensions',
     'rest_framework',
+    'django_filters',
 
     #local apps
     'accounts.apps.AccountsConfig',
@@ -62,6 +63,12 @@ REST_FRAMEWORK = {
    
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
     ],
 
     # default permission — allow read, require auth for write

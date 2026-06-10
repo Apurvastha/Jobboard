@@ -4,8 +4,11 @@ from rest_framework.generics import GenericAPIView
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import   AllowAny, IsAuthenticated
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
+from .filters import JobListingFilter
+from .pagination import JobListingPagination
 from accounts.permissions import  IsOwnerOrReadOnly, IsCompany
-from django.db.models import Q
 from .models import JobListing, Category
 from .serializers import (
     JobListingListSerializer, 
@@ -15,6 +18,35 @@ from .serializers import (
 
 class JobListingViewSet(viewsets.ModelViewSet):
     
+    pagination_class = JobListingPagination
+    
+    # declare filter backends for this viewset
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+
+    # django-fiter - uses JobListingFilter
+    filterset_class = JobListingFilter
+
+    # SearchFilter - full text search
+    # searches across these fields with ?search=python
+    search_fields = [
+        'title',
+        'description',
+        'company__name',
+    ]
+
+    # OrderingFilter - allow client to sort
+    # ?ordering=salary_min -> ascending
+    # ?ordering=-salary_min -> descending
+    ordering_fields = [
+        'posted_at',
+        'salary_min',
+        'salary_max',
+        'title'
+    ]
+
+    # default ordering
+    ordering = ['-posted_at']
+
     def get_permissions(self):
         if self.action in ['list', 'retrieve', 'featured', 'similar']:
             # read actions - anyone
@@ -30,7 +62,7 @@ class JobListingViewSet(viewsets.ModelViewSet):
         return [IsAuthenticated()]
 
     def get_queryset(self):
-        queryset = JobListing.objects.filter(
+        return JobListing.objects.filter(
             is_active = True
         ).select_related(
             'company', 'category'
@@ -38,30 +70,6 @@ class JobListingViewSet(viewsets.ModelViewSet):
             'tags'
         ).order_by('-posted_at')
 
-        location = self.request.query_params.get('location')
-        job_type = self.request.query_params.get('job_type')
-        experience_level = self.request.query_params.get('experience_level')
-        is_remote = self.request.query_params.get('is_remote')
-        search = self.request.query_params.get('search')
-        category = self.request.query_params.get('category')
-
-        if location:
-            queryset = queryset.filter(location__icontains=location)
-        if job_type:
-            queryset = queryset.filter(job_type=job_type)
-        if experience_level:
-            queryset = queryset.filter(experience_level=experience_level)
-        if is_remote:
-            queryset = queryset.filter(is_remote=is_remote.lower() == 'true')
-        if search:
-            queryset = queryset.filter(
-                Q(title__icontains=search) |
-                Q(description__icontains=search)
-            )
-        if category:
-            queryset = queryset.filter(category__slug=category)
-        
-        return queryset
     
     def get_serializer_class(self):
         # list action uses lightweight serializer

@@ -1,23 +1,8 @@
-# get smarthr token
-http POST http://127.0.0.1:8000/api/v1/accounts/token/ `
-  username=smarthr password=testpass123
-
-# try to edit mercari's job (id=1) with smarthr's token
-http PATCH http://127.0.0.1:8000/api/v1/jobs/1/ `
-  "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzgwOTQwOTMzLCJpYXQiOjE3ODA5MzczMzMsImp0aSI6ImJmZTJhMTVjM2M1MDRhMmJhM2QzZGZiMTcyZjY5YjMxIiwidXNlcl9pZCI6IjMiLCJ1c2VybmFtZSI6InNtYXJ0aHIiLCJlbWFpbCI6ImhpcmVAc21hcnRoci5jb20iLCJyb2xlIjoiY29tcGFueSJ9.xxArv8bET5h07qMYO7sJC6x4mEiH9Srn5wCptYppY8g" `
-  title="Hacked Title"
-# expect: 403 — You can only modify your own resources.
-
 {
-    "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzgwOTQwOTMzLCJpYXQiOjE3ODA5MzczMzMsImp0aSI6ImJmZTJhMTVjM2M1MDRhMmJhM2QzZGZiMTcyZjY5YjMxIiwidXNlcl9pZCI6IjMiLCJ1c2VybmFtZSI6InNtYXJ0aHIiLCJlbWFpbCI6ImhpcmVAc21hcnRoci5jb20iLCJyb2xlIjoiY29tcGFueSJ9.xxArv8bET5h07qMYO7sJC6x4mEiH9Srn5wCptYppY8g",
-    "email": "hire@smarthr.com",
-    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4MTU0MjEzMywiaWF0IjoxNzgwOTM3MzMzLCJqdGkiOiI1Yzc2MzM5ZTY4NTI0MmZlYjYzZjdjZjNkZGI1YmQyNSIsInVzZXJfaWQiOiIzIiwidXNlcm5hbWUiOiJzbWFydGhyIiwiZW1haWwiOiJoaXJlQHNtYXJ0aHIuY29tIiwicm9sZSI6ImNvbXBhbnkifQ.yRC55yFFJgT1QKytj1jabOfjSYfAYLj4P_pZwz3nwSo",
-    "role": "company",
-    "user_id": 3,
-    "username": "smarthr"
+  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4MTYxNzgzNiwiaWF0IjoxNzgxMDEzMDM2LCJqdGkiOiJkMjkwOWJmNzAzMmM0NTUwOGFlOGM4ZjBiZjFjMjQ0NyIsInVzZXJfaWQiOiIxMiIsInVzZXJuYW1lIjoiYXB1cnZhIiwiZW1haWwiOiJhcHVydmFAdGVzdC5jb20iLCJyb2xlIjoiY2FuZGlkYXRlIn0.-QrkD5udVrJMYQttyYAFenPk1mlZtQDKnh6EBqPnht4",
+  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzgxMDE2NjM2LCJpYXQiOjE3ODEwMTMwMzYsImp0aSI6ImVhZWJiYTNhMzgyYzQ4NDE4NmQ0Y2Q1OTBiYmViMmJmIiwidXNlcl9pZCI6IjEyIiwidXNlcm5hbWUiOiJhcHVydmEiLCJlbWFpbCI6ImFwdXJ2YUB0ZXN0LmNvbSIsInJvbGUiOiJjYW5kaWRhdGUifQ.EwVcynlM_lr17oscqXVQlR-RUnl6XRLt5pprUyCkUAI",
+  "user_id": 12,
+  "username": "apurva",
+  "email": "apurva@test.com",
+  "role": "candidate"
 }
-
-http PATCH http://127.0.0.1:8000/api/v1/jobs/203/ `
-  "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzgwOTQwOTMzLCJpYXQiOjE3ODA5MzczMzMsImp0aSI6ImJmZTJhMTVjM2M1MDRhMmJhM2QzZGZiMTcyZjY5YjMxIiwidXNlcl9pZCI6IjMiLCJ1c2VybmFtZSI6InNtYXJ0aHIiLCJlbWFpbCI6ImhpcmVAc21hcnRoci5jb20iLCJyb2xlIjoiY29tcGFueSJ9.xxArv8bET5h07qMYO7sJC6x4mEiH9Srn5wCptYppY8g" `
-  title="Updated Senior Python Engineer Tokyo"
-# expect: 200 OK with updated job
