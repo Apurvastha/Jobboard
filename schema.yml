@@ -158,9 +158,8 @@ paths:
   /api/v1/accounts/token/refresh/:
     post:
       operationId: accounts_token_refresh_create
-      description: |-
-        Takes a refresh type JSON web token and returns an access type JSON web
-        token if the refresh token is valid.
+      description: Returns a new access token using refresh token.
+      summary: Refresh access token
       tags:
       - accounts
       requestBody:
@@ -187,10 +186,7 @@ paths:
   /api/v1/jobs/:
     get:
       operationId: jobs_list
-      description: "\n            Returns a paginated list of active job listings.\n
-        \           Supports filtering by location, job type, experience level,\n
-        \           salary range, and remote status. Supports full-text search\n            across
-        title, description, and company name.\n        "
+      description: Returns paginated list with filtering and search.
       summary: List all active job listings
       parameters:
       - in: query
@@ -243,19 +239,12 @@ paths:
         name: min_salary
         schema:
           type: integer
-      - in: query
-        name: ordering
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
         schema:
           type: string
-        description: 'Sort by: posted_at, salary_min, salary_max, title. Prefix with
-          - for descending.'
-        examples:
-          HighestPayingFirst:
-            value: -salary_max
-            summary: Highest paying first
-          NewestFirst:
-            value: -posted_at
-            summary: Newest first
       - name: page
         required: false
         in: query
@@ -286,11 +275,12 @@ paths:
         name: salary_min
         schema:
           type: integer
-      - in: query
-        name: search
+      - name: search
+        required: false
+        in: query
+        description: A search term.
         schema:
           type: string
-        description: Search across title, description, and company name
       tags:
       - Jobs
       security:
@@ -365,7 +355,6 @@ paths:
           description: ''
     put:
       operationId: jobs_update
-      description: Fully updates a job listing. All required fields must be provided.
       summary: Update a job listing
       parameters:
       - in: path
@@ -400,7 +389,6 @@ paths:
           description: ''
     patch:
       operationId: jobs_partial_update
-      description: Updates only the fields provided in the request.
       summary: Partially update a job listing
       parameters:
       - in: path

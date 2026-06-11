@@ -297,3 +297,31 @@ SPECTACULAR_SETTINGS = {
     # security scheme — tells Swagger how to send the JWT token
     'SECURITY': [{'bearerAuth': []}],
 }
+
+REDIS_URL = env('REDIS_URL', default='redis://127.0.0.1:6379/0')
+
+# Celery config
+CELERY_BROKER_URL = env('REDIS_URL', default='redis://redis:6379/0')
+CELERY_RESULT_BACKEND = env('REDIS_URL', default='redis://redis:6379/0')
+
+# serialization
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+
+# timezone - important for scheduled taks
+CELERY_TIMEZONE = 'Asia/Tokyo'
+CELERY_ENABLE_UTC = True
+
+# task behaviour
+CELERY_TASK_TRACK_STARTED = True      # task shows 'STARTED' state
+CELERY_TASK_TIME_LIMIT = 30 * 60      # hard limit : 30 minutes
+CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60 # soft limit: 25 minutes (raises exception)
+
+# retry behaviour
+CELERY_TASKS_ACKS_LATE = True
+# if worker crashes mid-task, task goes back to queue
+# safer but means tasks must be idempotent
+
+# result expiry - clean up old results after 24 hours
+CELERY_RESULT_EXPIRES = 86400

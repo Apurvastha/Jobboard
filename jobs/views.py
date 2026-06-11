@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import   AllowAny, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from drf_spectacular.types import OpenApiTypes
 from .filters import JobListingFilter
 from .pagination import JobListingPagination
@@ -19,6 +19,26 @@ from .serializers import (
 )
 
 @extend_schema(tags=['Jobs'])
+@extend_schema_view(
+    list=extend_schema(
+        summary='List all active job listings',
+        description='Returns paginated list with filtering and search.',
+        responses={200: JobListingListSerializer(many=True)},
+    ),
+    create=extend_schema(
+        summary='Create a new job listing',
+        description='Only company accounts can create job listings.',
+        responses={201: JobListingSerializer, 403: OpenApiTypes.OBJECT},
+    ),
+    update=extend_schema(
+        summary='Update a job listing',
+        responses={200: JobListingSerializer},
+    ),
+    partial_update=extend_schema(
+        summary='Partially update a job listing',
+        responses={200: JobListingSerializer},
+    ),
+)
 class JobListingViewSet(viewsets.ModelViewSet):
     
     pagination_class = JobListingPagination
@@ -85,6 +105,26 @@ class JobListingViewSet(viewsets.ModelViewSet):
             company = self.request.user.company_profile,
             is_active = True
         )
+
+
+    @extend_schema(
+        summary='Get job listing details',
+        responses={200: JobListingSerializer},
+    )
+    def retrieve(self, request, *args, **kwargs):
+        pk = kwargs.get('pk')
+        cache_key = f'job:{pk}'
+
+        cached = cache.get(cache_key)
+        if cached:
+            return Response(cached)
+        
+        instance = self.get_object()
+        serializer = self.get_serializer(instance) # uses get_serializer_class() -> JobListingSerializer
+        data = serializer.data
+
+        cache.set(cache_key, data, timeout=1800)
+        return Response(data)
     
     @extend_schema(
         summary='Soft delete a job listing',
@@ -97,54 +137,6 @@ class JobListingViewSet(viewsets.ModelViewSet):
         instance.is_active = False
         instance.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
-    @extend_schema(
-        summary='List all active job listings',
-        description='''
-            Returns a paginated list of active job listings.
-            Supports filtering by location, job type, experience level,
-            salary range, and remote status. Supports full-text search
-            across title, description, and company name.
-        ''',
-        responses={200: JobListingListSerializer(many=True)},
-    )
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-
-    @extend_schema(
-        summary='Create a new job listing',
-        description='Only company accounts can create job listings.',
-        responses={
-            201: JobListingSerializer,
-            403: OpenApiTypes.OBJECT,
-        },
-    )
-    def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
-
-    @extend_schema(
-        summary='Get job listing details',
-        responses={200: JobListingSerializer},
-    )
-    def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
-    
-    @extend_schema(
-    summary="Update a job listing",
-    description="Fully updates a job listing. All required fields must be provided.",
-    responses={200: JobListingSerializer},
-)
-    def update(self, request, *args, **kwargs):
-        return super().update(request, *args, **kwargs)
-    
-    @extend_schema(
-    summary="Partially update a job listing",
-    description="Updates only the fields provided in the request.",
-    responses={200: JobListingSerializer},
-)
-    def partial_update(self, request, *args, **kwargs):
-        return super().partial_update(request, *args, **kwargs)
-
 
     @extend_schema(
         summary='Get featured job listings',
@@ -153,6 +145,11 @@ class JobListingViewSet(viewsets.ModelViewSet):
     )
     @action(detail=False, methods=['get'])
     def featured(self, request):
+        cache_key = 'featured_jobs'
+        cached = cache.get(cache_key)
+        if cached:
+            return Response(cached)
+        
         # return top 5 highest paying jobs
         jobs = JobListing.objects.filter(
             is_active = True
@@ -163,7 +160,9 @@ class JobListingViewSet(viewsets.ModelViewSet):
         ).order_by('-salary_max')[:5]
 
         serializer = JobListingListSerializer(jobs, many=True)
-        return Response(serializer.data)
+        data = serializer.data
+        cache.set(cache_key, data, timeout=3600)
+        return Response(data)
     
     @extend_schema(
         summary='Get similar job listings',
