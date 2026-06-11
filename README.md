@@ -1,42 +1,46 @@
 # JobBoard API
 
-A production-ready job board REST API built with Django and Django REST Framework.
+A production-ready job board REST API built with Django and Django REST Framework, targeting backend engineering roles at Japanese product companies.
 
 ## Tech Stack
 
 - **Backend:** Python, Django, Django REST Framework
 - **Database:** PostgreSQL
 - **Cache & Queue:** Redis, Celery
+- **Auth:** JWT (djangorestframework-simplejwt)
 - **Docs:** Swagger / OpenAPI (drf-spectacular)
+- **Containerization:** Docker, Docker Compose
 - **CI/CD:** GitHub Actions
 - **Deployment:** Railway
-
 
 ## Features
 
 - [x] Multi-app architecture (accounts, jobs, applications, blog, notifications)
 - [x] Custom User model with roles (company / candidate / admin)
-- [x] Job listing, application, blog, and company models with full schema design
-- [x] Database indexes for query optimisation (composite, single-column)
-- [x] Django Admin configured for all models with bulk actions and inlines
-- [x] Query optimisation with select_related and prefetch_related (N+1 free)
+- [x] Full model layer — job listings, applications, blog, company and candidate profiles
+- [x] Database indexes for query optimisation (composite and single-column)
+- [x] Django Admin with bulk actions, inlines, and custom dashboards
+- [x] N+1 free queries via select_related and prefetch_related
 - [x] EXPLAIN ANALYZE query plan analysis
-- [x] Function-based and class-based views with filtering
-- [x] Form validation for search and job creation
-- [x] Auth system — registration, login, logout, role-based access
-- [x] Custom middleware — request logging, audit trail, error handling
-- [x] Signals — auto profile creation, application notifications
-- [x] JWT authentication with role-based permissions 
-- [x] DRF serializers and viewsets 
-- [x] Job listing CRUD with filtering and full-text search 
-- [ ] Application system with status tracking 
-- [ ] Async email notifications via Celery 
-- [x] REST API with Swagger / OpenAPI docs 
-- [ ] 80%+ test coverage with pytest 
-- [x] Dockerized with docker-compose 
-- [ ] CI/CD pipeline with GitHub Actions 
-- [ ] Deployed to Railway 
-
+- [x] Function-based and class-based views
+- [x] Django forms with multi-level validation
+- [x] Custom middleware — request logging, audit trail, maintenance mode, JSON error handling
+- [x] Django signals — auto profile creation, application notifications
+- [x] JWT authentication with custom claims (role, email, username)
+- [x] Role-based permissions — IsCompany, IsCandidate, IsOwnerOrReadOnly
+- [x] DRF serializers with read/write split and nested representations
+- [x] ViewSets and Routers with custom @action endpoints
+- [x] django-filter with FilterSet, SearchFilter, OrderingFilter
+- [x] Custom pagination with total pages and page metadata
+- [x] Redis caching with signal-based cache invalidation
+- [x] Swagger / OpenAPI docs via drf-spectacular
+- [x] Seed management command for reproducible test data
+- [x] Dockerized with Docker Compose (web + PostgreSQL + Redis)
+- [ ] Async email notifications via Celery
+- [ ] Application system with status tracking
+- [ ] 80%+ test coverage with pytest
+- [ ] CI/CD pipeline with GitHub Actions
+- [ ] Deployed to Railway
 
 ## Database Schema
 
@@ -47,19 +51,19 @@ A production-ready job board REST API built with Django and Django REST Framewor
 ![Blog Schema](docs/blog_schema.png)
 
 ## Project Structure
-
 ```
 jobboard/
-├── accounts/
-├── jobs/
-├── applications/
-├── blog/
-├── notifications/
+├── accounts/        # custom user model, JWT auth, company and candidate profiles
+├── jobs/            # job listings, categories, tags, filtering, caching
+├── applications/    # candidate applications and status tracking
+├── blog/            # blog posts, comments, self-referential comment threads
+├── notifications/   # email and alert system
 └── docs/
-    └── jobboard_schema.png  ← jobs, accounts, applications
-    └── blog_schema.png      ← blog posts, comments, tags
+├── jobboard_schema.png
+└── blog_schema.png
 ```
-## Local Setup
+
+## Local Setup (without Docker)
 
 ```bash
 git clone https://github.com/yourusername/jobboard.git
@@ -75,29 +79,58 @@ source venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env   # fill in your values
 python manage.py migrate
+python manage.py seed_data
 python manage.py createsuperuser
 python manage.py runserver
 ```
 
-Visit `http://127.0.0.1:8000/admin/` to access the admin panel.
+## Local Setup (with Docker)
+
+```bash
+git clone https://github.com/yourusername/jobboard.git
+cd jobboard
+cp .env.example .env   # fill in your values
+docker-compose up --build
+docker-compose exec web python manage.py migrate
+docker-compose exec web python manage.py seed_data
+docker-compose exec web python manage.py createsuperuser
+```
 
 ## Environment Variables
 ```
-DJANGO_SECRET_KEY= your_secret_key
+DJANGO_SECRET_KEY=your_secret_key
 DEBUG=True
 DB_NAME=jobboard_db
 DB_USER=postgres
-DB_PASSWORD= your_password
+DB_PASSWORD=your_password
 DB_HOST=localhost
 DB_PORT=5432
+REDIS_URL=redis://127.0.0.1:6379/0
 ```
+
 ## API Documentation
 
-Interactive API documentation is available at:
+Interactive API documentation available at:
 
 - **Swagger UI:** http://localhost:8000/api/schema/swagger-ui/
 - **ReDoc:** http://localhost:8000/api/schema/redoc/
 - **OpenAPI Schema:** http://localhost:8000/api/schema/
+
+## Key API Endpoints
+```
+POST   /api/v1/accounts/token/              # login — returns JWT tokens
+POST   /api/v1/accounts/register/candidate/ # register as candidate
+POST   /api/v1/accounts/register/company/   # register as company
+GET    /api/v1/accounts/me/                 # current user profile
+GET    /api/v1/jobs/                        # list jobs (filterable, searchable)
+POST   /api/v1/jobs/                        # create job (company only)
+GET    /api/v1/jobs/{id}/                   # job detail
+PATCH  /api/v1/jobs/{id}/                   # update job (owner only)
+DELETE /api/v1/jobs/{id}/                   # soft delete (owner only)
+GET    /api/v1/jobs/featured/               # top 5 highest paying jobs
+GET    /api/v1/jobs/{id}/similar/           # jobs in same category
+GET    /api/v1/jobs/categories/             # all categories (Redis cached)
+```
 
 ## Project Status
 

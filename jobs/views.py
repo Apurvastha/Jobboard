@@ -106,22 +106,6 @@ class JobListingViewSet(viewsets.ModelViewSet):
             salary range, and remote status. Supports full-text search
             across title, description, and company name.
         ''',
-        parameters=[
-            OpenApiParameter(
-                name='search',
-                type=OpenApiTypes.STR,
-                description='Search across title, description, and company name',
-            ),
-            OpenApiParameter(
-                name='ordering',
-                type=OpenApiTypes.STR,
-                description='Sort by: posted_at, salary_min, salary_max, title. Prefix with - for descending.',
-                examples=[
-                    OpenApiExample('Highest paying first', value='-salary_max'),
-                    OpenApiExample('Newest first', value='-posted_at'),
-                ]
-            ),
-        ],
         responses={200: JobListingListSerializer(many=True)},
     )
     def list(self, request, *args, **kwargs):
