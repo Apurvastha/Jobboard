@@ -229,17 +229,21 @@ LOGGING = {
         },
     },
     'loggers': {
-        # your middleware logger
+        # middleware logger
         'jobboard.middleware': {
             'handlers': ['console'],
             'level': 'INFO',
         },
-        # signlas
+        # signals
         'accounts.signals': {
             'handlers': ['console'],
             'level': 'INFO',
         },
         'applications.signals': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+        'applications.tasks': {
             'handlers': ['console'],
             'level': 'INFO',
         },
@@ -325,3 +329,13 @@ CELERY_TASKS_ACKS_LATE = True
 
 # result expiry - clean up old results after 24 hours
 CELERY_RESULT_EXPIRES = 86400
+
+
+# Email configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = env('EMAIL_HOST', default='sandbox.smtp.mailtrap.io')
+EMAIL_PORT = env.int('EMAIL_PORT', default=587)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@jobboard.com')
