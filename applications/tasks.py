@@ -48,9 +48,9 @@ JobBoard Team
         )
         logger.info(
             f'Application received email send to {company_email}'
-            f'for job: {job_title}'
+            f' for job: {job_title}'
         )
-        return f'Email send to {company_email}'
+        return f'Email sent to {company_email}'
     except Application.DoesNotExist:
         # application was deleted before task ran - dont retry
         logger.warning(f'Application {application_id} not found - skipping email')
@@ -98,7 +98,7 @@ def send_status_change_email(self, application_id, old_status, new_status):
             message=f'''
 Hi,
 
-Your application fro {job_title} at {company_name} {status_messages}.
+Your application for {job_title} at {company_name} {status_messages}.
 
 Previous status: {old_status}
 Current_status = {new_status}
@@ -114,10 +114,10 @@ JobBoard Team
         )
 
         logger.info(
-            f'Status change email send to {candidate_email}'
-            f'({old_status} -> {new_status}) for: {job_title}'
+            f'Status change email sent to {candidate_email}'
+            f' ({old_status} -> {new_status}) for: {job_title}'
         )
-        return f'Email send to {candidate_email}'
+        return f'Email sent to {candidate_email}'
     
     except Application.DoesNotExist:
         logger.warning(f'Application {application_id} not found - skipping')
@@ -126,45 +126,75 @@ JobBoard Team
     except Exception as exc:
         logger.error(f'Failed to send status change email: {exc}')
         raise self.retry(exc=exc, countdown=60)
-    
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def send_welcome_email(self, user_id):
+
+
+@shared_task(bind=True, max_retries=3)
+def remind_unreviewed_applications(self):
     """
-    Sends welcome email to new users after registration.
+    Runs every weekday at 8am.
+    Finds companies with pending applications older than 3 days
+    and sends them a reminder email.
     """
     try:
-        from accounts.models import User
+        from .models import Application
+        from accounts.models import CompanyProfile
+        from django.core.mail import send_mail
+        from django.conf import settings
+        from django.utils import timezone
 
-        user = User.objects.get(id=user_id)
+        three_day_ago = timezone.now() - timezone.timedelta(days=3)
 
-        role_message = {
-            'candidate': 'Start exploring job opportunities and apply to positions that match your skills.',
-            'company': 'Start posting job listings and find the best candidates for your team.',
-        }.get(user.role, 'Welcome to JobBoard')
+        # find companies that have pending applications older than 3 days
+        companies_with_pending = CompanyProfile.objects.filter(
+            job_listings__applications__status = 'pending',
+            job_listings__applications__applied_at__lt = three_day_ago,
+        ).distinct()
 
-        send_mail(
-            subject='Welcome to JobBoard',
-            message=f'''
-Hi {user.username},
+        reminded_count = 0
 
-Welcome to JobBoard! Your account has been created successfully.
+        for company in companies_with_pending.select_related('user'):
+            # count how many pending apps this company has
+            pending_count = Application.objects.filter(
+                job__company=company,
+                status='pending',
+                applied_at__lt=three_day_ago
+            ).count()
 
-{role_message}
+            if pending_count == 0:
+                continue
+
+            try:
+                send_mail(
+                    subject=f'Reminder — {pending_count} unreviewed applications',
+                    message=f'''
+Hi {company.name} team,
+
+You have {pending_count} application(s) waiting for review that were submitted more than 3 days ago.
+
+Please log in to your dashboard to review them.
 
 Best regards,
 JobBoard Team
-            '''.strip(),
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            fail_silently=False,
-        )
+                    '''.strip(),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[company.user.email],
+                    fail_silently=True,
+                )
+                reminded_count += 1
+                logger.info(
+                    f'Reminder sent to {company.name} '
+                    f'({pending_count} pending applications)'
+                )
+            except Exception as e:
+                logger.warning(f'Failed to remind {company.name}: {e}')
 
-        logger.info(f'Welcome email sent to {user.email}')
-        return f'Welcome email sent to {user.email}'
+        return f'Reminders sent to {reminded_count} companies.'
 
     except Exception as exc:
-        logger.error(f'Failed to send welcome email: {exc}')
-        raise self.retry(exc=exc, countdown=60)
+        logger.error(f'Reminder task failed: {exc}')
+        raise self.retry(exc=exc, countdown=300)
+    
+
         
     
 

@@ -22,7 +22,7 @@ def handle_user_post_save(sender, instance, created, **kwargs):
             logger.info(f'CandidateProfile created for: {instance.email}')
 
     # send welcome email via Celery
-    from applications.tasks import send_welcome_email
+    from .tasks import send_welcome_email
     transaction.on_commit(
         lambda: send_welcome_email.delay(instance.id)
     )

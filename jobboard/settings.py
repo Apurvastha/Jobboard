@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'drf_spectacular',
+    'django_celery_beat',
 
     #local apps
     'accounts.apps.AccountsConfig',
@@ -233,29 +234,35 @@ LOGGING = {
         'jobboard.middleware': {
             'handlers': ['console'],
             'level': 'INFO',
+            'propagate': False,
         },
         # signals
         'accounts.signals': {
             'handlers': ['console'],
             'level': 'INFO',
+            'propagate': False,
         },
         'applications.signals': {
             'handlers': ['console'],
             'level': 'INFO',
+            'propagate': False,
         },
         'applications.tasks': {
             'handlers': ['console'],
             'level': 'INFO',
+            'propagate': False,
         },
         'jobs.signals': {
             'handlers': ['console'],
             'level': 'INFO',
+            'propagate': False,
         },
         # Django SQL query logger
-        'django.db.backends': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-        },
+        # 'django.db.backends': {
+        #     'handlers': ['console'],
+        #     'level': 'DEBUG',
+        #     'propagate': False,
+        # },
     },
 }
 
@@ -329,6 +336,51 @@ CELERY_TASKS_ACKS_LATE = True
 
 # result expiry - clean up old results after 24 hours
 CELERY_RESULT_EXPIRES = 86400
+
+
+#CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+CELERY_BEAT_SCHEDULE = {
+
+    # deactivate expire jobs - every night at midnight Tokyo time
+    'deactivate-expired-jobs': {
+        'task': 'jobs.tasks.deactivate_expired_jobs',
+        'schedule': crontab(hour=0, minute=0), # 00.00 every day
+    },
+
+    # weekly job digest - every Sunday at 9am Tokyo time
+    'weekly-job-digest': { 
+        'task': 'jobs.tasks.send_weekly_job_digest',
+        'schedule': crontab(
+            hour=9,
+            minute=0,
+            day_of_week='sunday'
+        ),
+        },
+
+    # remind compaies about unreviewed applications
+    # every weekday at 8 am
+    'remind-unreviewed-application': {
+        'task': 'applications.tasks.remind_unreviewed_applications',
+        'schedule': crontab(
+            hour=8,
+            minute=0,
+            day_of_week='monday-friday',
+        )
+    },
+
+    # clean up expired cache keys - every hour
+    'cleanup-cache': {
+        'task': 'jobs.tasks.cleanup_stale_cache',
+        'schedule': crontab(minute=0) # top of every hour
+    },
+
+
+}
 
 
 # Email configuration

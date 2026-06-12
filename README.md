@@ -36,7 +36,8 @@ A production-ready job board REST API built with Django and Django REST Framewor
 - [x] Swagger / OpenAPI docs via drf-spectacular
 - [x] Seed management command for reproducible test data
 - [x] Dockerized with Docker Compose (web + PostgreSQL + Redis)
-- [ ] Async email notifications via Celery
+- [x] Async email notifications via Celery (application received, status change, welcome)
+- [x] Celery worker with retry logic and Flower monitoring
 - [ ] Application system with status tracking
 - [ ] 80%+ test coverage with pytest
 - [ ] CI/CD pipeline with GitHub Actions
