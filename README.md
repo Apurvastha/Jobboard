@@ -39,7 +39,8 @@ A production-ready job board REST API built with Django and Django REST Framewor
 - [x] Async email notifications via Celery (application received, status change, welcome)
 - [x] Celery worker with retry logic and Flower monitoring
 - [x] 50 pytest tests passing — 83% coverage
-- [ ] Application system with status tracking
+- [x] Application system with status tracking (apply, view, status update)
+- [x] Nested endpoint: GET /jobs/{id}/applications/ for company dashboard
 - [ ] CI/CD pipeline with GitHub Actions
 - [ ] Deployed to Railway
 

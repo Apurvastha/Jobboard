@@ -79,3 +79,21 @@ class IsAdminOrReadOnly(BasePermission):
             request.user.is_admin
         )
 
+
+class IsApplicationOwner(BasePermission):
+    """
+    Only the candidate who submitted the application can view it.
+    """
+    message = 'You can only view your own applications.'
+
+    def has_object_permission(self, request, view, obj):
+        return obj.candidate == request.user
+    
+class IsJobOwnerForApplication(BasePermission):
+    """
+    Only the company that owns the job can change application status.
+    """
+    message = 'You can only manage applications for your own job listings.'
+
+    def has_object_permission(self, request, view, obj):
+        return obj.job.company.user == request.user

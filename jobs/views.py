@@ -82,6 +82,8 @@ class JobListingViewSet(viewsets.ModelViewSet):
         if self.action in ['update', 'partial_update', 'destroy']:
             # modifying - must be the owner
             return [IsOwnerOrReadOnly()]
+        if self.action == 'applications':
+            return [IsAuthenticated()]
         return [IsAuthenticated()]
 
     def get_queryset(self):
@@ -185,6 +187,56 @@ class JobListingViewSet(viewsets.ModelViewSet):
 
         serializer = JobListingListSerializer(similar_jobs, many = True)
         return Response(serializer.data)
+    
+    @extend_schema(
+    summary='Get applications for a job listing',
+    description='Companies only. Returns all applications for this job.',
+    responses={200: 'ApplicationListSerializer(many=True)'},
+    )
+    @action(detail=True, methods=['get'], url_path='applications')
+    def applications(self, request, pk=None):
+        from applications.models import Application
+        from applications.serializers import ApplicationListSerializer
+
+        job = self.get_object()
+
+        # only the company that owns this job can see its applications
+        if not request.user.is_authenticated:
+            return Response(
+                {'error': 'Authentication required.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        if not request.user.is_company:
+            return Response(
+                {'error': 'Only company accounts can view applications.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if job.company.user != request.user:
+            return Response(
+                {'error': 'You can only view applications for your own jobs.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        applications = Application.objects.filter(
+            job=job
+        ).select_related(
+            'candidate',
+            'job',
+        ).order_by('-applied_at')
+
+        # filter by status if provided
+        status_filter = request.query_params.get('status')
+        if status_filter:
+            applications = applications.filter(status=status_filter)
+
+        serializer = ApplicationListSerializer(applications, many=True)
+        return Response({
+            'job': job.title,
+            'total': applications.count(),
+            'results': serializer.data,
+        })
 
 @extend_schema(
     tags=['Jobs'],
