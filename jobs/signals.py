@@ -37,4 +37,12 @@ def log_job_listing_deletion(sender, instance, **kwargs):
 @receiver([post_save,post_delete], sender=Category)
 def invalidate_category_cache(sender, instance, **kwargs):
     cache.delete('all_categories')
+
+@receiver(post_save, sender=JobListing)
+def invalidate_job_cache(sender, instance, **kwargs):
+    cache.delete(f'job:{instance.pk}')
+    cache.delete('featured_jobs')
+    logger.info(f'Job cache invalidated: job:{instance.pk}')
+
+
     

@@ -38,8 +38,8 @@ A production-ready job board REST API built with Django and Django REST Framewor
 - [x] Dockerized with Docker Compose (web + PostgreSQL + Redis)
 - [x] Async email notifications via Celery (application received, status change, welcome)
 - [x] Celery worker with retry logic and Flower monitoring
+- [x] 50 pytest tests passing — 83% coverage
 - [ ] Application system with status tracking
-- [ ] 80%+ test coverage with pytest
 - [ ] CI/CD pipeline with GitHub Actions
 - [ ] Deployed to Railway
 
@@ -132,6 +132,22 @@ GET    /api/v1/jobs/featured/               # top 5 highest paying jobs
 GET    /api/v1/jobs/{id}/similar/           # jobs in same category
 GET    /api/v1/jobs/categories/             # all categories (Redis cached)
 ```
+
+## Testing
+
+```bash
+docker-compose exec web pytest tests/ -v --cov=. --cov-report=term-missing
+```
+
+**50 tests passing · 83% coverage**
+
+| Area | Tests |
+|---|---|
+| Job listings — CRUD, permissions, filtering, N+1 | 22 tests |
+| Authentication — JWT, registration, profiles | 15 tests |
+| Applications — apply, signals, email tasks | 8 tests |
+| Redis cache — invalidation, hit/miss | 4 tests |
+| Celery tasks — email, job expiry | 1 test |
 
 ## Project Status
 
