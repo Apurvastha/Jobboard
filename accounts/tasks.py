@@ -1,7 +1,8 @@
 import logging
+
 from celery import shared_task
-from django.core.mail import send_mail
 from django.conf import settings
+from django.core.mail import send_mail
 
 logger = logging.getLogger(__name__)
 
@@ -17,13 +18,13 @@ def send_welcome_email(self, user_id):
         user = User.objects.get(id=user_id)
 
         role_message = {
-            'candidate': 'Start exploring job opportunities and apply to positions that match your skills.',
-            'company': 'Start posting job listings and find the best candidates for your team.',
-        }.get(user.role, 'Welcome to JobBoard')
+            "candidate": "Start exploring job opportunities and apply to positions that match your skills.",
+            "company": "Start posting job listings and find the best candidates for your team.",
+        }.get(user.role, "Welcome to JobBoard")
 
         send_mail(
-            subject='Welcome to JobBoard',
-            message=f'''
+            subject="Welcome to JobBoard",
+            message=f"""
 Hi {user.username},
 
 Welcome to JobBoard! Your account has been created successfully.
@@ -32,15 +33,15 @@ Welcome to JobBoard! Your account has been created successfully.
 
 Best regards,
 JobBoard Team
-            '''.strip(),
+            """.strip(),
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
             fail_silently=False,
         )
 
-        logger.info(f'Welcome email sent to {user.email}')
-        return f'Welcome email sent to {user.email}'
+        logger.info(f"Welcome email sent to {user.email}")
+        return f"Welcome email sent to {user.email}"
 
     except Exception as exc:
-        logger.error(f'Failed to send welcome email: {exc}')
+        logger.error(f"Failed to send welcome email: {exc}")
         raise self.retry(exc=exc, countdown=60)

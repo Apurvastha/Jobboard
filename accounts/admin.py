@@ -1,73 +1,60 @@
 from django.contrib import admin
-from django.db.models import Count
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.db.models import Count
+
 from jobs.models import JobListing
-from .models import User, CompanyProfile, CandidateProfile
+
+from .models import CandidateProfile, CompanyProfile, User
 
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    #extend the default UserAdmin to show your custom fields
+    # extend the default UserAdmin to show your custom fields
     list_display = [
-        'email',
-        'username',
-        'role',
-        'is_active',
-        'is_staff',
-        'date_joined',
+        "email",
+        "username",
+        "role",
+        "is_active",
+        "is_staff",
+        "date_joined",
     ]
 
-    list_filter = ['role', 'is_active', 'is_staff']
-    search_fields = ['email', 'username']
+    list_filter = ["role", "is_active", "is_staff"]
+    search_fields = ["email", "username"]
 
-    #add role to the fieldsets
-    fieldsets = BaseUserAdmin.fieldsets + (
-        ('Role',{
-            'fields': ['role']
-        }
+    # add role to the fieldsets
+    fieldsets = BaseUserAdmin.fieldsets + (("Role", {"fields": ["role"]}),)
 
-        ),
-    )
-
-    add_fieldsets = BaseUserAdmin.add_fieldsets + (
-        (
-            'Role', {
-                'fields': ['role']
-            }
-        ),
-    )
+    add_fieldsets = BaseUserAdmin.add_fieldsets + (("Role", {"fields": ["role"]}),)
 
 
 class JobListingInline(admin.TabularInline):
     model = JobListing
-    extra = 0             # don't show empty extra forms
-    fields = ['title', 'job_type', 'is_active', 'posted_at']
-    readonly_fields = ['posted_at']
-    show_change_link = True   # link to full edit page
+    extra = 0  # don't show empty extra forms
+    fields = ["title", "job_type", "is_active", "posted_at"]
+    readonly_fields = ["posted_at"]
+    show_change_link = True  # link to full edit page
 
-    
+
 @admin.register(CompanyProfile)
 class CompanyProfileAdmin(admin.ModelAdmin):
-    
-    list_display = ['name', 'user', 'country', 'founded_year', 'job_count']
-    search_fields = ['name', 'user__email']
-    list_select_related = ['user']
+    list_display = ["name", "user", "country", "founded_year", "job_count"]
+    search_fields = ["name", "user__email"]
+    list_select_related = ["user"]
     inlines = [JobListingInline]
 
     def get_queryset(self, request):
-        return super().get_queryset(request).annotate(
-            job_count=Count('job_listings')
-        )
+        return super().get_queryset(request).annotate(job_count=Count("job_listings"))
 
     def job_count(self, obj):
         return obj.job_count
 
-    job_count.short_description = 'Jobs Posted'
-    job_count.admin_order_field = 'job_count'
+    job_count.short_description = "Jobs Posted"
+    job_count.admin_order_field = "job_count"
 
 
 @admin.register(CandidateProfile)
 class CandidateProfileAdmin(admin.ModelAdmin):
-    list_display = ['user', 'years_of_experience']
-    search_fields = ['user__email']
-    list_select_related = ['user']
+    list_display = ["user", "years_of_experience"]
+    search_fields = ["user__email"]
+    list_select_related = ["user"]

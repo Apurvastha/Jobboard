@@ -1,118 +1,114 @@
-from rest_framework import generics, status
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .serializers import CustomTokenObtainPairSerializer
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from . permissions import IsCandidate
 from drf_spectacular.utils import extend_schema
+from rest_framework import generics, status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+from .permissions import IsCandidate
 from .serializers import (
+    CandidateProfileSerializer,
+    CompanyProfileSerializer,
+    CustomTokenObtainPairSerializer,
     RegisterCandidateSerializer,
     RegisterCompanySerializer,
     UserSerializer,
-    CandidateProfileSerializer,
-    CompanyProfileSerializer,
 )
 
-@extend_schema(tags=['Authentication'], summary='Register Candidate')
+
+@extend_schema(tags=["Authentication"], summary="Register Candidate")
 class RegisterCandidateView(generics.CreateAPIView):
     serializer_class = RegisterCandidateSerializer
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data = request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        return Response(
-            UserSerializer(user).data,
-            status=status.HTTP_201_CREATED
-        )
-@extend_schema(tags=['Authentication'], summary='Register Company')
+        return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(tags=["Authentication"], summary="Register Company")
 class RegisterCompanyView(generics.CreateAPIView):
     serializer_class = RegisterCompanySerializer
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data= request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        return Response(
-            UserSerializer(user).data,
-            status=status.HTTP_201_CREATED
-        )
-@extend_schema(tags=['Profile'], summary='Get current user')
+        return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(tags=["Profile"], summary="Get current user")
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
-@extend_schema(tags=['Profile'], summary='Candidate Profile')  
+
+
+@extend_schema(tags=["Profile"], summary="Candidate Profile")
 class CandidateProfileView(APIView):
     permission_classes = [IsAuthenticated, IsCandidate]
 
     def get(self, request):
-       
+
         if not request.user.has_candidate_profile:
             return Response(
-                {'error': 'Profile not found'},
-                status= status.HTTP_404_NOT_FOUND
+                {"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND
             )
-        serializer = CandidateProfileSerializer(
-            request.user.candidate_profile
-        )
+        serializer = CandidateProfileSerializer(request.user.candidate_profile)
         return Response(serializer.data)
-    
-    @extend_schema(summary='Edit Candidate Profile')
+
+    @extend_schema(summary="Edit Candidate Profile")
     def patch(self, request):
-        
+
         from .models import CandidateProfile
-        profile, _ = CandidateProfile.objects.get_or_create(
-            user=request.user
-        )
+
+        profile, _ = CandidateProfile.objects.get_or_create(user=request.user)
         serializer = CandidateProfileSerializer(
-            profile,
-            data= request.data,
-            partial = True
+            profile, data=request.data, partial=True
         )
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-@extend_schema(tags=['Profile'], summary='Company Profile')
+
+
+@extend_schema(tags=["Profile"], summary="Company Profile")
 class CompanyProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         if not request.user.is_company:
             return Response(
-                {'error': 'Only companies have a company profile'},
-                status= status.HTTP_403_FORBIDDEN
+                {"error": "Only companies have a company profile"},
+                status=status.HTTP_403_FORBIDDEN,
             )
-        
-        serializer = CompanyProfileSerializer(
-            request.user.company_profile
-        )
+
+        serializer = CompanyProfileSerializer(request.user.company_profile)
 
         return Response(serializer.data)
-    
-    @extend_schema(summary='Edit Company Profile')
+
+    @extend_schema(summary="Edit Company Profile")
     def patch(self, request):
         if not request.user.is_company:
             return Response(
-                {'error': 'Only companies can update company profiles.'},
-                status=status.HTTP_403_FORBIDDEN
+                {"error": "Only companies can update company profiles."},
+                status=status.HTTP_403_FORBIDDEN,
             )
         serializer = CompanyProfileSerializer(
-            request.user.company_profile,
-            data= request.data,
-            partial = True
+            request.user.company_profile, data=request.data, partial=True
         )
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-@extend_schema(tags=['Authentication'], summary='Login')
+
+
+@extend_schema(tags=["Authentication"], summary="Login")
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 

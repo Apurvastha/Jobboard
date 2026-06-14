@@ -1,0 +1,17 @@
+# ruff.toml
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "W",   # pycodestyle warnings
+]
+ignore = [
+    "E501",  # line too long — not critical
+    "F401",  # unused imports — signals uses this pattern
+]
+
+[lint.per-file-ignores]
+"*/migrations/*" = ["E", "F", "W", "I"]
+"*/settings*" = ["E501"]
+"tests/*" = ["F811"]   # fixtures cause "redefined" warnings

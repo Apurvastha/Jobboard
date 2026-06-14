@@ -5,56 +5,133 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('accounts', '0002_user_role_candidateprofile_companyprofile'),
+        ("accounts", "0002_user_role_candidateprofile_companyprofile"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Category',
+            name="Category",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100, unique=True)),
-                ('slug', models.SlugField(max_length=100, unique=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=100, unique=True)),
+                ("slug", models.SlugField(max_length=100, unique=True)),
             ],
             options={
-                'verbose_name_plural': 'Categories',
-                'ordering': ['name'],
+                "verbose_name_plural": "Categories",
+                "ordering": ["name"],
             },
         ),
         migrations.CreateModel(
-            name='Tag',
+            name="Tag",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=50, unique=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=50, unique=True)),
             ],
         ),
         migrations.CreateModel(
-            name='JobListing',
+            name="JobListing",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=200)),
-                ('description', models.TextField()),
-                ('job_type', models.CharField(choices=[('full_time', 'Full Time'), ('part_time', 'Part Time'), ('contract', 'Contract'), ('internship', 'Internship')], default='full_time', max_length=20)),
-                ('experience_level', models.CharField(choices=[('junior', 'Junior'), ('mid', 'Mid'), ('senior', 'Senior')], default='mid', max_length=20)),
-                ('location', models.CharField(max_length=200)),
-                ('is_remote', models.BooleanField(default=False)),
-                ('salary_min', models.IntegerField(blank=True, null=True)),
-                ('salary_max', models.IntegerField(blank=True, null=True)),
-                ('is_active', models.BooleanField(default=True)),
-                ('deadline', models.DateField(blank=True, null=True)),
-                ('posted_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('category', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='job_listings', to='jobs.category')),
-                ('company', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='job_listings', to='accounts.companyprofile')),
-                ('tags', models.ManyToManyField(blank=True, related_name='job_listings', to='jobs.tag')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=200)),
+                ("description", models.TextField()),
+                (
+                    "job_type",
+                    models.CharField(
+                        choices=[
+                            ("full_time", "Full Time"),
+                            ("part_time", "Part Time"),
+                            ("contract", "Contract"),
+                            ("internship", "Internship"),
+                        ],
+                        default="full_time",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "experience_level",
+                    models.CharField(
+                        choices=[
+                            ("junior", "Junior"),
+                            ("mid", "Mid"),
+                            ("senior", "Senior"),
+                        ],
+                        default="mid",
+                        max_length=20,
+                    ),
+                ),
+                ("location", models.CharField(max_length=200)),
+                ("is_remote", models.BooleanField(default=False)),
+                ("salary_min", models.IntegerField(blank=True, null=True)),
+                ("salary_max", models.IntegerField(blank=True, null=True)),
+                ("is_active", models.BooleanField(default=True)),
+                ("deadline", models.DateField(blank=True, null=True)),
+                ("posted_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "category",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="job_listings",
+                        to="jobs.category",
+                    ),
+                ),
+                (
+                    "company",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="job_listings",
+                        to="accounts.companyprofile",
+                    ),
+                ),
+                (
+                    "tags",
+                    models.ManyToManyField(
+                        blank=True, related_name="job_listings", to="jobs.tag"
+                    ),
+                ),
             ],
             options={
-                'ordering': ['posted_at'],
-                'indexes': [models.Index(fields=['is_active', 'posted_at'], name='jobs_joblis_is_acti_0c85d6_idx'), models.Index(fields=['location'], name='jobs_joblis_locatio_6129f1_idx'), models.Index(fields=['job_type'], name='jobs_joblis_job_typ_265f24_idx')],
+                "ordering": ["posted_at"],
+                "indexes": [
+                    models.Index(
+                        fields=["is_active", "posted_at"],
+                        name="jobs_joblis_is_acti_0c85d6_idx",
+                    ),
+                    models.Index(
+                        fields=["location"], name="jobs_joblis_locatio_6129f1_idx"
+                    ),
+                    models.Index(
+                        fields=["job_type"], name="jobs_joblis_job_typ_265f24_idx"
+                    ),
+                ],
             },
         ),
     ]

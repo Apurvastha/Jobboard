@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0002_user_role_candidateprofile_companyprofile'),
-        ('jobs', '0001_initial'),
+        ("accounts", "0002_user_role_candidateprofile_companyprofile"),
+        ("jobs", "0001_initial"),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='joblisting',
-            index=models.Index(fields=['salary_min'], name='jobs_joblis_salary__67eccc_idx'),
+            model_name="joblisting",
+            index=models.Index(
+                fields=["salary_min"], name="jobs_joblis_salary__67eccc_idx"
+            ),
         ),
     ]

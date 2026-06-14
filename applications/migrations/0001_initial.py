@@ -6,29 +6,67 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('jobs', '0001_initial'),
+        ("jobs", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Application',
+            name="Application",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('status', models.CharField(choices=[('pending', 'Pending'), ('reviewing', 'Reviewing'), ('rejected', 'Rejected'), ('accepted', 'Accepted')], default='pending', max_length=20)),
-                ('cover_letter', models.TextField(blank=True)),
-                ('applied_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('candidate', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='applications', to=settings.AUTH_USER_MODEL)),
-                ('job', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='applications', to='jobs.joblisting')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pending"),
+                            ("reviewing", "Reviewing"),
+                            ("rejected", "Rejected"),
+                            ("accepted", "Accepted"),
+                        ],
+                        default="pending",
+                        max_length=20,
+                    ),
+                ),
+                ("cover_letter", models.TextField(blank=True)),
+                ("applied_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "candidate",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="applications",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "job",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="applications",
+                        to="jobs.joblisting",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-applied_at'],
-                'constraints': [models.UniqueConstraint(fields=('candidate', 'job'), name='unique_application_per_candidate')],
+                "ordering": ["-applied_at"],
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("candidate", "job"),
+                        name="unique_application_per_candidate",
+                    )
+                ],
             },
         ),
     ]

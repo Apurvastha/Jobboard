@@ -146,7 +146,7 @@ docker-compose exec web pytest tests/ -v --cov=. --cov-report=term-missing
 |---|---|
 | Job listings — CRUD, permissions, filtering, N+1 | 22 tests |
 | Authentication — JWT, registration, profiles | 15 tests |
-| Applications — apply, signals, email tasks | 8 tests |
+| Applications — apply, signals, email tasks | 17 tests |
 | Redis cache — invalidation, hit/miss | 4 tests |
 | Celery tasks — email, job expiry | 1 test |
 

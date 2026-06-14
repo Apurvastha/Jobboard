@@ -14,36 +14,39 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
+    SpectacularRedocView,
     SpectacularSwaggerView,
-    SpectacularRedocView
 )
 
-admin.site.site_header = 'JobBoard Admin'
-admin.site.site_title = 'JobBoard'
-admin.site.index_title = 'Dashboard'
+admin.site.site_header = "JobBoard Admin"
+admin.site.site_title = "JobBoard"
+admin.site.index_title = "Dashboard"
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-
+    path("admin/", admin.site.urls),
     # API endpoints
-    path('api/v1/jobs/', include('jobs.urls', namespace='jobs')),
-    path('api/v1/accounts/', include('accounts.urls', namespace= 'accounts')),
-    path('api/v1/applications/', include('applications.urls', namespace= 'applications')),
-
-    #OpenAPI schema - raw JSON/YAML
-    path('api/schema', SpectacularAPIView.as_view(), name="schema"),
-
+    path("api/v1/jobs/", include("jobs.urls", namespace="jobs")),
+    path("api/v1/accounts/", include("accounts.urls", namespace="accounts")),
+    path(
+        "api/v1/applications/", include("applications.urls", namespace="applications")
+    ),
+    # OpenAPI schema - raw JSON/YAML
+    path("api/schema", SpectacularAPIView.as_view(), name="schema"),
     # Swagger UI - visual interactive docs
-    path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(
-        url_name = 'schema'
-    ), name='swagger-ui'),
-
-    #ReDoc - alternative clean docs UI
-    path('api/schema/redoc', SpectacularRedocView.as_view(
-        url_name='schema'
-    ), name='redoc'),
+    path(
+        "api/schema/swagger-ui/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui",
+    ),
+    # ReDoc - alternative clean docs UI
+    path(
+        "api/schema/redoc",
+        SpectacularRedocView.as_view(url_name="schema"),
+        name="redoc",
+    ),
 ]
