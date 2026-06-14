@@ -140,7 +140,7 @@ GET    /api/v1/jobs/categories/             # all categories (Redis cached)
 docker-compose exec web pytest tests/ -v --cov=. --cov-report=term-missing
 ```
 
-**50 tests passing · 83% coverage**
+**59 tests passing · 85% coverage**
 
 | Area | Tests |
 |---|---|
