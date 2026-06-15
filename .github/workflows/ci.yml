@@ -67,12 +67,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Check no missing migrations
-        run: python manage.py migrate --check
-        continue-on-error: false
-
       - name: Run migrations
         run: python manage.py migrate
+
+      - name: Check no missing migrations
+        run: python manage.py makemigrations --check --dry-run
 
       - name: Run tests with coverage
         run: |
