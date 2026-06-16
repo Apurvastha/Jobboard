@@ -275,6 +275,20 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ── MAINTENANCE MODE ──────────────────────────────────────────
 MAINTENANCE_MODE = False
 
+# ── SECURITY HEADERS ───────────────────────────────────────────────────
+if not DEBUG:
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_SSL_REDIRECT = False # railway handles this - no need for redirect
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+SILENCED_SYSTEM_CHECKS = ['security.W008'] # ssl handled by railway proxy
+
+
 # ── LOGGING ───────────────────────────────────────────────────
 LOGGING = {
     'version': 1,

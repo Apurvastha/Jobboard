@@ -45,6 +45,10 @@ class RegisterCompanyView(generics.CreateAPIView):
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+            summary='Get current user',
+            responses={200: UserSerializer},
+    )
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
@@ -53,7 +57,12 @@ class MeView(APIView):
 @extend_schema(tags=["Profile"], summary="Candidate Profile")
 class CandidateProfileView(APIView):
     permission_classes = [IsAuthenticated, IsCandidate]
+    serializer_classes = CandidateProfileSerializer
 
+    @extend_schema(
+        summary='Get candidate profile',
+        responses={200: CandidateProfileSerializer},
+    )
     def get(self, request):
 
         if not request.user.has_candidate_profile:
@@ -63,7 +72,11 @@ class CandidateProfileView(APIView):
         serializer = CandidateProfileSerializer(request.user.candidate_profile)
         return Response(serializer.data)
 
-    @extend_schema(summary="Edit Candidate Profile")
+    @extend_schema(
+        summary='Update candidate profile',
+        request=CandidateProfileSerializer,
+        responses={200: CandidateProfileSerializer},
+    )
     def patch(self, request):
 
         from .models import CandidateProfile
@@ -81,7 +94,12 @@ class CandidateProfileView(APIView):
 @extend_schema(tags=["Profile"], summary="Company Profile")
 class CompanyProfileView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = CompanyProfileSerializer
 
+    @extend_schema(
+        summary='Get company profile',
+        responses={200: CompanyProfileSerializer},
+    )
     def get(self, request):
         if not request.user.is_company:
             return Response(
@@ -93,7 +111,11 @@ class CompanyProfileView(APIView):
 
         return Response(serializer.data)
 
-    @extend_schema(summary="Edit Company Profile")
+    @extend_schema(
+        summary='Update company profile',
+        request=CompanyProfileSerializer,
+        responses={200: CompanyProfileSerializer},
+    )
     def patch(self, request):
         if not request.user.is_company:
             return Response(

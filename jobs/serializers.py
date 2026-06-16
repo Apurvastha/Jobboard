@@ -3,6 +3,8 @@ from rest_framework import serializers
 from accounts.models import CompanyProfile
 
 from .models import Category, JobListing, Tag
+from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.types import OpenApiTypes
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -27,9 +29,11 @@ class JobListingSerializer(serializers.ModelSerializer):
     application_count = serializers.SerializerMethodField()
     salary_range = serializers.SerializerMethodField()
 
+    @extend_schema_field(OpenApiTypes.INT)
     def get_application_count(self, obj):
         return obj.applications.count()
 
+    @extend_schema_field(OpenApiTypes.STR)
     def get_salary_range(self, obj):
         if obj.salary_min and obj.salary_max:
             return f"${obj.salary_min:,} - ${obj.salary_max:,}"

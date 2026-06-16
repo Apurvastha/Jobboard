@@ -36,6 +36,11 @@ class ApplicationViewSet(
     viewsets.GenericViewSet,   # base router — no extra actions
 ):
     def get_queryset(self):
+        # drf-spectacular generates schema with anonymous user
+        # return empty queryset to avoid AttributeError
+        if getattr(self, 'swagger_fake_view', False):
+            return Application.objects.none()
+
         user = self.request.user
 
         if user.is_candidate:

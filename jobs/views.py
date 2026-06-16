@@ -10,6 +10,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from accounts.permissions import IsCompany, IsOwnerOrReadOnly
+from applications.serializers import ApplicationListSerializer
 
 from .filters import JobListingFilter
 from .models import Category, JobListing
@@ -182,7 +183,7 @@ class JobListingViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="Get applications for a job listing",
         description="Companies only. Returns all applications for this job.",
-        responses={200: "ApplicationListSerializer(many=True)"},
+        responses={200: ApplicationListSerializer(many=True)},
     )
     @action(detail=True, methods=["get"], url_path="applications")
     def applications(self, request, pk=None):
