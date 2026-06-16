@@ -34,8 +34,9 @@ A production-ready job board REST API built with Django and Django REST Framewor
 - **Backend:** Python 3.11, Django 5.2, Django REST Framework
 - **Database:** PostgreSQL 15
 - **Cache & Queue:** Redis 7, Celery 5
-- **Auth:** JWT (djangorestframework-simplejwt)
+- **Auth:** JWT (djangorestframework-simplejwt) with token blacklisting
 - **Docs:** Swagger / OpenAPI (drf-spectacular)
+- **Monitoring:** Sentry (errors + performance)
 - **Containerisation:** Docker, Docker Compose
 - **CI/CD:** GitHub Actions → Railway (auto-deploy on green CI)
 - **Deployment:** Railway
@@ -55,21 +56,27 @@ A production-ready job board REST API built with Django and Django REST Framewor
 - [x] Custom middleware — request logging, audit trail, maintenance mode, JSON error handling
 - [x] Django signals — auto profile creation, application notifications, cache invalidation
 - [x] JWT authentication with custom claims (role, email, username embedded in token)
+- [x] JWT token blacklisting — logout invalidates tokens server-side immediately
+- [x] Token rotation — stolen refresh tokens detected and invalidated automatically
 - [x] Role-based permissions — IsCompany, IsCandidate, IsOwnerOrReadOnly
 - [x] DRF serializers with read/write split and nested representations
 - [x] ViewSets and Routers with custom @action endpoints (featured, similar, applications)
 - [x] django-filter with FilterSet, SearchFilter, OrderingFilter
 - [x] Custom pagination with total pages and page metadata
 - [x] Redis caching with signal-based cache invalidation (categories, job detail, featured)
+- [x] Rate limiting — 5/min on login, 100/day unauthenticated, 1000/day authenticated
+- [x] Security headers — HSTS, XSS protection, clickjacking prevention, secure cookies
+- [x] Health check endpoint — lightweight liveness probe at /health/
+- [x] Sentry error monitoring — Django, Celery, and Redis integrations
 - [x] Swagger / OpenAPI docs via drf-spectacular
 - [x] Seed management command for reproducible test data
 - [x] Dockerized with Docker Compose (web + PostgreSQL + Redis + Celery + Beat + Flower)
 - [x] Async email notifications via Celery (application received, status change, welcome)
-- [x] Celery worker with retry logic and Flower monitoring dashboard
+- [x] Celery worker with retry logic (max 3 retries, 60s backoff) and Flower monitoring
 - [x] Celery Beat scheduled tasks (nightly job expiry, weekly digest, daily reminders)
 - [x] Application system with full status lifecycle (pending → reviewing → accepted/rejected)
 - [x] Nested endpoint: GET /jobs/{id}/applications/ for company dashboard
-- [x] 59 pytest tests passing — 83% coverage
+- [x] 63 pytest tests passing — 85% coverage
 - [x] GitHub Actions CI pipeline — tests + linting on every push
 - [x] Deployed to Railway with automatic CD pipeline
 
@@ -89,7 +96,7 @@ A production-ready job board REST API built with Django and Django REST Framewor
 
 ```
 jobboard/
-├── accounts/        # custom user model, JWT auth, company and candidate profiles
+├── accounts/        # custom user model, JWT auth, logout, company and candidate profiles
 ├── jobs/            # job listings, categories, tags, filtering, caching, Beat tasks
 ├── applications/    # candidate applications and status lifecycle
 ├── blog/            # blog posts, comments, self-referential comment threads
@@ -165,6 +172,7 @@ EMAIL_HOST_USER=your_mailtrap_username
 EMAIL_HOST_PASSWORD=your_mailtrap_password
 EMAIL_USE_TLS=True
 DEFAULT_FROM_EMAIL=noreply@jobboard.com
+SENTRY_DSN=your_sentry_dsn  # optional — error monitoring
 ```
 
 ---
@@ -187,7 +195,8 @@ Local:
 ```
 Authentication
   POST   /api/v1/accounts/token/              # login — returns JWT access + refresh tokens
-  POST   /api/v1/accounts/token/refresh/      # refresh access token
+  POST   /api/v1/accounts/token/refresh/      # refresh access token (rotates refresh token)
+  POST   /api/v1/accounts/logout/             # logout — blacklists refresh token immediately
   POST   /api/v1/accounts/register/candidate/ # register as candidate
   POST   /api/v1/accounts/register/company/   # register as company
   GET    /api/v1/accounts/me/                 # current user info
@@ -208,6 +217,9 @@ Applications
   GET    /api/v1/applications/               # my applications (candidate) or job apps (company)
   GET    /api/v1/applications/{id}/          # application detail
   PATCH  /api/v1/applications/{id}/status/   # change status (company only)
+
+System
+  GET    /health/                             # health check — liveness probe
 ```
 
 ---
@@ -234,18 +246,30 @@ GET /api/v1/jobs/?page=2&page_size=10
 
 ---
 
+## Security
+
+- **JWT with blacklisting** — logout invalidates tokens server-side, not just client-side
+- **Token rotation** — each refresh issues a new refresh token; reuse of old tokens detected as theft and all sessions invalidated
+- **Rate limiting** — login endpoint limited to 5 requests/minute to prevent brute force
+- **HSTS** — enforces HTTPS for 1 year including subdomains, submitted to browser preload list
+- **Security headers** — XSS protection, content type sniffing prevention, clickjacking prevention
+- **Secure cookies** — session and CSRF cookies marked Secure and HttpOnly
+- **Sentry monitoring** — all unhandled exceptions captured with full stack traces and request context
+
+---
+
 ## Testing
 
 ```bash
 docker-compose exec web pytest tests/ -v --cov=. --cov-report=term-missing
 ```
 
-**59 tests passing · 83% coverage**
+**63 tests passing · 85% coverage**
 
 | Area | Tests |
 |---|---|
 | Job listings — CRUD, permissions, filtering, N+1 | 22 tests |
-| Authentication — JWT, registration, profiles | 15 tests |
+| Authentication — JWT, registration, logout, profiles | 19 tests |
 | Applications — apply, status change, permissions | 13 tests |
 | Redis cache — invalidation, hit/miss | 4 tests |
 | Celery tasks — email, job expiry | 5 tests |
@@ -263,7 +287,7 @@ GitHub Actions — spin up PostgreSQL + Redis
     ↓
 Run migrations + check for missing migrations
     ↓
-Run 59 pytest tests (fail if coverage < 70%)
+Run 63 pytest tests (fail if coverage < 70%)
     ↓
 Run Ruff linter
     ↓
