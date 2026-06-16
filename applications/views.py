@@ -21,7 +21,7 @@ from .serializers import (
 )
 
 
-@extend_schema(tags="Applications")
+@extend_schema(tags=["Applications"])
 class ApplicationViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "head", "options"]
 
