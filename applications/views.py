@@ -1,5 +1,5 @@
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import status, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -29,11 +29,12 @@ from .serializers import (
         responses={200: ApplicationDetailSerializer},
     ),
 )
-class ApplicationViewSet(viewsets.ModelViewSet):
-    # only allow safe methods + POST and PATCH
-    # PUT is excluded entirely
-    http_method_names = ["get", "post", "patch", "head", "options"]
-
+class ApplicationViewSet(
+    mixins.CreateModelMixin,   # POST /applications/
+    mixins.ListModelMixin,     # GET  /applications/
+    mixins.RetrieveModelMixin, # GET  /applications/{id}/
+    viewsets.GenericViewSet,   # base router — no extra actions
+):
     def get_queryset(self):
         user = self.request.user
 
@@ -121,26 +122,4 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 application,
                 context={"request": request}
             ).data
-        )
-
-    # hide from Swagger and return 405 — status update goes to /{id}/status/
-    @extend_schema(exclude=True)
-    def partial_update(self, request, *args, **kwargs):
-        return Response(
-            {"error": "Use PATCH /applications/{id}/status/ to update status."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
-        )
-
-    @extend_schema(exclude=True)
-    def update(self, request, *args, **kwargs):
-        return Response(
-            {"error": "Use PATCH /applications/{id}/status/ to update status."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
-        )
-
-    @extend_schema(exclude=True)
-    def destroy(self, request, *args, **kwargs):
-        return Response(
-            {"error": "Applications cannot be deleted."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
