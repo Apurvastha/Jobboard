@@ -1,17 +1,10 @@
-from django.db import transaction
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from accounts.permissions import (
-    IsApplicationOwner,
-    IsCandidate,
-    IsCompany,
-    IsJobOwnerForApplication,
-)
-
+from accounts.permissions import IsCandidate, IsCompany
 from .models import Application
 from .serializers import (
     ApplicationCreateSerializer,
@@ -22,7 +15,23 @@ from .serializers import (
 
 
 @extend_schema(tags=["Applications"])
+@extend_schema_view(
+    list=extend_schema(
+        summary="List applications",
+        description=(
+            "Candidates see their own applications. "
+            "Companies see applications for their job listings."
+        ),
+        responses={200: ApplicationListSerializer(many=True)},
+    ),
+    retrieve=extend_schema(
+        summary="Get application detail",
+        responses={200: ApplicationDetailSerializer},
+    ),
+)
 class ApplicationViewSet(viewsets.ModelViewSet):
+    # only allow safe methods + POST and PATCH
+    # PUT is excluded entirely
     http_method_names = ["get", "post", "patch", "head", "options"]
 
     def get_queryset(self):
@@ -43,6 +52,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 .order_by("-applied_at")
             )
 
+        # admin sees all
         return (
             Application.objects.all()
             .select_related("job", "job__company", "candidate")
@@ -52,7 +62,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == "create":
             return ApplicationCreateSerializer
-        if self.action in ["retrieve"]:
+        if self.action == "retrieve":
             return ApplicationDetailSerializer
         if self.action == "update_status":
             return ApplicationStatusUpdateSerializer
@@ -65,45 +75,22 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated(), IsCompany()]
         return [IsAuthenticated()]
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context["request"] = self.request
-        return context
-
     @extend_schema(
         summary="Apply to a job listing",
         description="Candidates only. Cannot apply twice to the same job.",
         responses={201: ApplicationDetailSerializer},
     )
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(
-            data=request.data, context={"request": request}
-        )
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         application = serializer.save()
-        # return full detail after creation
         return Response(
-            ApplicationDetailSerializer(application).data,
+            ApplicationDetailSerializer(
+                application,
+                context={"request": request}
+            ).data,
             status=status.HTTP_201_CREATED,
         )
-
-    @extend_schema(
-        summary="List applications",
-        description=(
-            "Candidates see their own applications. "
-            "Companies see applications for their job listings."
-        ),
-        responses={200: ApplicationListSerializer(many=True)},
-    )
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-
-    @extend_schema(
-        summary="Get application detail",
-        responses={200: ApplicationDetailSerializer},
-    )
-    def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
 
     @extend_schema(
         summary="Update application status",
@@ -115,7 +102,6 @@ class ApplicationViewSet(viewsets.ModelViewSet):
     def update_status(self, request, pk=None):
         application = self.get_object()
 
-        # check the company owns this job
         if application.job.company.user != request.user:
             return Response(
                 {"error": "You can only manage applications for your own jobs."},
@@ -123,17 +109,38 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             )
 
         serializer = ApplicationStatusUpdateSerializer(
-            application, data=request.data, partial=True
+            application,
+            data=request.data,
+            partial=True
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        # return full detail after update
-        return Response(ApplicationDetailSerializer(application).data)
+        return Response(
+            ApplicationDetailSerializer(
+                application,
+                context={"request": request}
+            ).data
+        )
 
-    # disable update and partial_update — use update_status instead
+    # hide from Swagger and return 405 — status update goes to /{id}/status/
+    @extend_schema(exclude=True)
+    def partial_update(self, request, *args, **kwargs):
+        return Response(
+            {"error": "Use PATCH /applications/{id}/status/ to update status."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    @extend_schema(exclude=True)
     def update(self, request, *args, **kwargs):
         return Response(
             {"error": "Use PATCH /applications/{id}/status/ to update status."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    @extend_schema(exclude=True)
+    def destroy(self, request, *args, **kwargs):
+        return Response(
+            {"error": "Applications cannot be deleted."},
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
