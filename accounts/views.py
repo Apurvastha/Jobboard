@@ -4,7 +4,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-
+from .throttles import LoginRateThrottle
 from .permissions import IsCandidate
 from .serializers import (
     CandidateProfileSerializer,
@@ -14,6 +14,7 @@ from .serializers import (
     RegisterCompanySerializer,
     UserSerializer,
 )
+
 
 
 @extend_schema(tags=["Authentication"], summary="Register Candidate")
@@ -111,9 +112,6 @@ class CompanyProfileView(APIView):
 @extend_schema(tags=["Authentication"], summary="Login")
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+    throttle_classes = [LoginRateThrottle]
 
 
-TokenRefreshView = extend_schema(
-    summary="Refresh access token",
-    description="Returns a new access token using refresh token.",
-)(TokenRefreshView)

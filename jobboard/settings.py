@@ -4,6 +4,10 @@ from pathlib import Path
 import environ
 from celery.schedules import crontab
 import dj_database_url
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.celery import CeleryIntegration
+from sentry_sdk.integrations.redis import RedisIntegration
 
 env = environ.Env()
 environ.Env.read_env()
@@ -141,7 +145,18 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ],
+    'DEFAULT_THROTTLE_CLASSES': [
+    'rest_framework.throttling.AnonRateThrottle',
+    'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',    # unauthenticated users
+        'user': '1000/day',   # authenticated users
+        'login': '5/minute',
+    }
+
 }
+
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
@@ -210,6 +225,31 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(minute=0),
     },
 }
+
+# ── SENTRY ─────────────────────────────────────────────────────
+SENTRY_DSN = env('SENTRY_DSN', default='')
+
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[
+            DjangoIntegration(
+                transaction_style='url',
+                middleware_spans=True,
+                signals_spans=True
+            ),
+            CeleryIntegration(
+                monitor_beat_tasks=True
+            ),
+            RedisIntegration(),
+        ],
+        traces_sample_rate=0.1,
+        sample_rate=1.0,
+        environment='production' if not DEBUG else 'development',
+        release=env('RAILWAY_GIT_COMMIT_SHA', default='local'),
+        send_default_pii=False,
+        attach_stacktrace=True
+    )
 
 # ── EMAIL ─────────────────────────────────────────────────────
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

@@ -4,16 +4,43 @@
 
 A production-ready job board REST API built with Django and Django REST Framework, targeting backend engineering roles at Japanese product companies.
 
+## Live Demo
+
+- **Swagger UI:** https://jobboard-production-aae7.up.railway.app/api/schema/swagger-ui/
+- **ReDoc:** https://jobboard-production-aae7.up.railway.app/api/schema/redoc/
+- **API Base:** https://jobboard-production-aae7.up.railway.app/api/v1/
+- **Admin Panel:** https://jobboard-production-aae7.up.railway.app/admin/
+
+## Test Credentials
+
+**Candidate account:**
+- Username: `alice`
+- Password: `testpass123`
+
+**Company account:**
+- Username: `mercari`
+- Password: `testpass123`
+
+**Quick start:**
+1. Open [Swagger UI](https://jobboard-production-aae7.up.railway.app/api/schema/swagger-ui/)
+2. `POST /api/v1/accounts/token/` with the credentials above
+3. Click **Authorize** (top right lock icon) and paste the access token
+4. Explore all endpoints with live data
+
+---
+
 ## Tech Stack
 
-- **Backend:** Python, Django, Django REST Framework
-- **Database:** PostgreSQL
-- **Cache & Queue:** Redis, Celery
+- **Backend:** Python 3.11, Django 5.2, Django REST Framework
+- **Database:** PostgreSQL 15
+- **Cache & Queue:** Redis 7, Celery 5
 - **Auth:** JWT (djangorestframework-simplejwt)
 - **Docs:** Swagger / OpenAPI (drf-spectacular)
-- **Containerization:** Docker, Docker Compose
-- **CI/CD:** GitHub Actions
+- **Containerisation:** Docker, Docker Compose
+- **CI/CD:** GitHub Actions → Railway (auto-deploy on green CI)
 - **Deployment:** Railway
+
+---
 
 ## Features
 
@@ -22,29 +49,31 @@ A production-ready job board REST API built with Django and Django REST Framewor
 - [x] Full model layer — job listings, applications, blog, company and candidate profiles
 - [x] Database indexes for query optimisation (composite and single-column)
 - [x] Django Admin with bulk actions, inlines, and custom dashboards
-- [x] N+1 free queries via select_related and prefetch_related
-- [x] EXPLAIN ANALYZE query plan analysis
+- [x] N+1 free queries via select_related and prefetch_related (EXPLAIN ANALYZE verified)
 - [x] Function-based and class-based views
 - [x] Django forms with multi-level validation
 - [x] Custom middleware — request logging, audit trail, maintenance mode, JSON error handling
-- [x] Django signals — auto profile creation, application notifications
-- [x] JWT authentication with custom claims (role, email, username)
+- [x] Django signals — auto profile creation, application notifications, cache invalidation
+- [x] JWT authentication with custom claims (role, email, username embedded in token)
 - [x] Role-based permissions — IsCompany, IsCandidate, IsOwnerOrReadOnly
 - [x] DRF serializers with read/write split and nested representations
-- [x] ViewSets and Routers with custom @action endpoints
+- [x] ViewSets and Routers with custom @action endpoints (featured, similar, applications)
 - [x] django-filter with FilterSet, SearchFilter, OrderingFilter
 - [x] Custom pagination with total pages and page metadata
-- [x] Redis caching with signal-based cache invalidation
+- [x] Redis caching with signal-based cache invalidation (categories, job detail, featured)
 - [x] Swagger / OpenAPI docs via drf-spectacular
 - [x] Seed management command for reproducible test data
-- [x] Dockerized with Docker Compose (web + PostgreSQL + Redis)
+- [x] Dockerized with Docker Compose (web + PostgreSQL + Redis + Celery + Beat + Flower)
 - [x] Async email notifications via Celery (application received, status change, welcome)
-- [x] Celery worker with retry logic and Flower monitoring
-- [x] 50 pytest tests passing — 83% coverage
-- [x] Application system with status tracking (apply, view, status update)
+- [x] Celery worker with retry logic and Flower monitoring dashboard
+- [x] Celery Beat scheduled tasks (nightly job expiry, weekly digest, daily reminders)
+- [x] Application system with full status lifecycle (pending → reviewing → accepted/rejected)
 - [x] Nested endpoint: GET /jobs/{id}/applications/ for company dashboard
-- [ ] CI/CD pipeline with GitHub Actions
-- [ ] Deployed to Railway
+- [x] 59 pytest tests passing — 83% coverage
+- [x] GitHub Actions CI pipeline — tests + linting on every push
+- [x] Deployed to Railway with automatic CD pipeline
+
+---
 
 ## Database Schema
 
@@ -54,23 +83,52 @@ A production-ready job board REST API built with Django and Django REST Framewor
 **Blog Schema**
 ![Blog Schema](docs/blog_schema.png)
 
+---
+
 ## Project Structure
+
 ```
 jobboard/
 ├── accounts/        # custom user model, JWT auth, company and candidate profiles
-├── jobs/            # job listings, categories, tags, filtering, caching
-├── applications/    # candidate applications and status tracking
+├── jobs/            # job listings, categories, tags, filtering, caching, Beat tasks
+├── applications/    # candidate applications and status lifecycle
 ├── blog/            # blog posts, comments, self-referential comment threads
-├── notifications/   # email and alert system
+├── notifications/   # notification system
+├── tests/           # pytest test suite
+│   ├── conftest.py
+│   ├── test_jobs.py
+│   ├── test_accounts.py
+│   ├── test_applications.py
+│   └── test_cache.py
 └── docs/
-├── jobboard_schema.png
-└── blog_schema.png
+    ├── jobboard_schema.png
+    └── blog_schema.png
 ```
+
+---
+
+## Local Setup (with Docker)
+
+```bash
+git clone https://github.com/Apurvastha/jobboard.git
+cd jobboard
+cp .env.example .env   # fill in your values
+docker-compose up --build -d
+docker-compose exec web python manage.py migrate
+docker-compose exec web python manage.py seed_data
+docker-compose exec web python manage.py createsuperuser
+```
+
+Visit:
+- API: http://localhost:8000/api/v1/jobs/
+- Swagger: http://localhost:8000/api/schema/swagger-ui/
+- Admin: http://localhost:8000/admin/
+- Flower: http://localhost:5555/
 
 ## Local Setup (without Docker)
 
 ```bash
-git clone https://github.com/yourusername/jobboard.git
+git clone https://github.com/Apurvastha/jobboard.git
 cd jobboard
 python -m venv venv
 
@@ -88,53 +146,93 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-## Local Setup (with Docker)
-
-```bash
-git clone https://github.com/yourusername/jobboard.git
-cd jobboard
-cp .env.example .env   # fill in your values
-docker-compose up --build
-docker-compose exec web python manage.py migrate
-docker-compose exec web python manage.py seed_data
-docker-compose exec web python manage.py createsuperuser
-```
+---
 
 ## Environment Variables
+
 ```
 DJANGO_SECRET_KEY=your_secret_key
 DEBUG=True
 DB_NAME=jobboard_db
 DB_USER=postgres
 DB_PASSWORD=your_password
-DB_HOST=localhost
+DB_HOST=db
 DB_PORT=5432
-REDIS_URL=redis://127.0.0.1:6379/0
+REDIS_URL=redis://redis:6379/0
+EMAIL_HOST=sandbox.smtp.mailtrap.io
+EMAIL_PORT=587
+EMAIL_HOST_USER=your_mailtrap_username
+EMAIL_HOST_PASSWORD=your_mailtrap_password
+EMAIL_USE_TLS=True
+DEFAULT_FROM_EMAIL=noreply@jobboard.com
 ```
+
+---
 
 ## API Documentation
 
-Interactive API documentation available at:
+Interactive API documentation:
 
+- **Swagger UI:** https://jobboard-production-aae7.up.railway.app/api/schema/swagger-ui/
+- **ReDoc:** https://jobboard-production-aae7.up.railway.app/api/schema/redoc/
+- **OpenAPI Schema:** https://jobboard-production-aae7.up.railway.app/api/schema/
+
+Local:
 - **Swagger UI:** http://localhost:8000/api/schema/swagger-ui/
-- **ReDoc:** http://localhost:8000/api/schema/redoc/
-- **OpenAPI Schema:** http://localhost:8000/api/schema/
+
+---
 
 ## Key API Endpoints
+
 ```
-POST   /api/v1/accounts/token/              # login — returns JWT tokens
-POST   /api/v1/accounts/register/candidate/ # register as candidate
-POST   /api/v1/accounts/register/company/   # register as company
-GET    /api/v1/accounts/me/                 # current user profile
-GET    /api/v1/jobs/                        # list jobs (filterable, searchable)
-POST   /api/v1/jobs/                        # create job (company only)
-GET    /api/v1/jobs/{id}/                   # job detail
-PATCH  /api/v1/jobs/{id}/                   # update job (owner only)
-DELETE /api/v1/jobs/{id}/                   # soft delete (owner only)
-GET    /api/v1/jobs/featured/               # top 5 highest paying jobs
-GET    /api/v1/jobs/{id}/similar/           # jobs in same category
-GET    /api/v1/jobs/categories/             # all categories (Redis cached)
+Authentication
+  POST   /api/v1/accounts/token/              # login — returns JWT access + refresh tokens
+  POST   /api/v1/accounts/token/refresh/      # refresh access token
+  POST   /api/v1/accounts/register/candidate/ # register as candidate
+  POST   /api/v1/accounts/register/company/   # register as company
+  GET    /api/v1/accounts/me/                 # current user info
+
+Jobs
+  GET    /api/v1/jobs/                        # list jobs (filterable, searchable, paginated)
+  POST   /api/v1/jobs/                        # create job (company only)
+  GET    /api/v1/jobs/{id}/                   # job detail
+  PATCH  /api/v1/jobs/{id}/                   # update job (owner only)
+  DELETE /api/v1/jobs/{id}/                   # soft delete (owner only)
+  GET    /api/v1/jobs/featured/               # top 5 highest paying jobs
+  GET    /api/v1/jobs/{id}/similar/           # jobs in same category
+  GET    /api/v1/jobs/{id}/applications/      # all applications for this job (company only)
+  GET    /api/v1/jobs/categories/             # all categories (Redis cached, 1hr TTL)
+
+Applications
+  POST   /api/v1/applications/               # apply to a job (candidate only)
+  GET    /api/v1/applications/               # my applications (candidate) or job apps (company)
+  GET    /api/v1/applications/{id}/          # application detail
+  PATCH  /api/v1/applications/{id}/status/   # change status (company only)
 ```
+
+---
+
+## Filtering & Search
+
+```bash
+# filter by multiple criteria
+GET /api/v1/jobs/?location=Tokyo&job_type=full_time&is_remote=false
+
+# salary range
+GET /api/v1/jobs/?min_salary=6000000&max_salary=10000000
+
+# full-text search across title, description, company name
+GET /api/v1/jobs/?search=python
+
+# ordering
+GET /api/v1/jobs/?ordering=-salary_max   # highest paying first
+GET /api/v1/jobs/?ordering=-posted_at    # newest first
+
+# pagination
+GET /api/v1/jobs/?page=2&page_size=10
+```
+
+---
 
 ## Testing
 
@@ -142,16 +240,48 @@ GET    /api/v1/jobs/categories/             # all categories (Redis cached)
 docker-compose exec web pytest tests/ -v --cov=. --cov-report=term-missing
 ```
 
-**59 tests passing · 85% coverage**
+**59 tests passing · 83% coverage**
 
 | Area | Tests |
 |---|---|
 | Job listings — CRUD, permissions, filtering, N+1 | 22 tests |
 | Authentication — JWT, registration, profiles | 15 tests |
-| Applications — apply, signals, email tasks | 17 tests |
+| Applications — apply, status change, permissions | 13 tests |
 | Redis cache — invalidation, hit/miss | 4 tests |
-| Celery tasks — email, job expiry | 1 test |
+| Celery tasks — email, job expiry | 5 tests |
+
+---
+
+## CI/CD Pipeline
+
+Every push to `main`:
+
+```
+Push to GitHub
+    ↓
+GitHub Actions — spin up PostgreSQL + Redis
+    ↓
+Run migrations + check for missing migrations
+    ↓
+Run 59 pytest tests (fail if coverage < 70%)
+    ↓
+Run Ruff linter
+    ↓
+Deploy to Railway (only if all tests pass)
+    ↓
+gunicorn starts on Railway
+    ↓
+Live at https://jobboard-production-aae7.up.railway.app
+```
+
+---
 
 ## Project Status
 
-Actively in development. New features added regularly.
+Actively in development.
+
+**Roadmap:**
+- [x] Phase 1: Django + DRF backend (complete)
+- [ ] Phase 2: FastAPI microservice
+- [ ] Phase 3: AI backend (RAG pipeline, pgvector, LLM gateway)
+- [ ] Phase 4: System design + interview preparation

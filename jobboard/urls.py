@@ -17,6 +17,8 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import include, path
+from django.http import JsonResponse
+from django.db import connection
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -27,8 +29,21 @@ admin.site.site_header = "JobBoard Admin"
 admin.site.site_title = "JobBoard"
 admin.site.index_title = "Dashboard"
 
+def health_check(request):
+    try:
+        connection.ensure_connection()
+        db_status = 'ok'
+    except Exception:
+        db_status = 'error'
+    return JsonResponse({
+        'status': 'ok',
+        'database': db_status
+    })
+
+
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path('health/', health_check, name = 'health'),
     # API endpoints
     path("api/v1/jobs/", include("jobs.urls", namespace="jobs")),
     path("api/v1/accounts/", include("accounts.urls", namespace="accounts")),
