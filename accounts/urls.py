@@ -1,7 +1,13 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
-
+from drf_spectacular.utils import extend_schema
 from . import views
+
+TokenRefreshView = extend_schema(
+    tags=['Authentication'],
+    summary='Refresh access token',
+    description='Send a refresh token to get a new access token without logging in again.',
+)(TokenRefreshView)
 
 app_name = "accounts"
 
