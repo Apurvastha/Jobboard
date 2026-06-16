@@ -1,5 +1,7 @@
 # JobBoard API
 
+[![CI](https://github.com/Apurvastha/jobboard/actions/workflows/ci.yml/badge.svg)](https://github.com/Apurvastha/jobboard/actions/workflows/ci.yml)
+
 A production-ready job board REST API built with Django and Django REST Framework, targeting backend engineering roles at Japanese product companies.
 
 ## Tech Stack
