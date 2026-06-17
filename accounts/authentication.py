@@ -1,6 +1,7 @@
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken
 from django.core.cache import cache
+from drf_spectacular.extensions import OpenApiAuthenticationExtension
 
 
 class RedisRevokedJWTAuthentication(JWTAuthentication):
@@ -18,3 +19,19 @@ class RedisRevokedJWTAuthentication(JWTAuthentication):
         if cache.get(f'revoked_token:{jti}'):
             raise InvalidToken('Token has been removed.')
         return token
+
+class RedisRevokedJWTAuthenticationScheme(OpenApiAuthenticationExtension):
+    """
+    Tells drf-spectacular that RedisRevokedJWTAuthentication
+    uses Bearer JWT — same as standard JWTAuthentication.
+    Without this, Swagger UI has no Authorize button.
+    """
+    target_class = 'accounts.authentication.RedisRevokedJWTAuthentication'
+    name = 'bearerAuth'
+
+    def get_security_definition(self, auto_schema):
+        return {
+            'type': 'http',
+            'scheme': 'bearer',
+            'bearerFormat': 'JWT',
+        }
