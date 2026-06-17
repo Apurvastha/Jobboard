@@ -57,6 +57,7 @@ A production-ready job board REST API built with Django and Django REST Framewor
 - [x] Django signals — auto profile creation, application notifications, cache invalidation
 - [x] JWT authentication with custom claims (role, email, username embedded in token)
 - [x] JWT token blacklisting — logout invalidates tokens server-side immediately
+- [x] Redis-based access token revocation — logout immediately invalidates access tokens via JTI blacklist with auto-expiring TTL
 - [x] Token rotation — stolen refresh tokens detected and invalidated automatically
 - [x] Role-based permissions — IsCompany, IsCandidate, IsOwnerOrReadOnly
 - [x] DRF serializers with read/write split and nested representations
@@ -249,6 +250,7 @@ GET /api/v1/jobs/?page=2&page_size=10
 ## Security
 
 - **JWT with blacklisting** — logout invalidates tokens server-side, not just client-side
+- **Redis access token revocation** — on logout, the access token's JTI is stored in Redis with a TTL matching the token's remaining lifetime. Every request checks this revocation store (~0.1ms in-memory lookup). Token is blocked instantly. Redis self-cleans when TTL expires — zero maintenance
 - **Token rotation** — each refresh issues a new refresh token; reuse of old tokens detected as theft and all sessions invalidated
 - **Rate limiting** — login endpoint limited to 5 requests/minute to prevent brute force
 - **HSTS** — enforces HTTPS for 1 year including subdomains, submitted to browser preload list
