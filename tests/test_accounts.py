@@ -170,3 +170,60 @@ class TestJWT:
         assert response.data["role"] == "candidate"
         # password should never be in response
         assert "password" not in response.data
+
+
+@pytest.mark.django_db
+class TestLogout:
+
+    def test_logout_blacklists_refresh_token(self, api_client, candidate_user):
+        """Logging out blacklists the refresh token."""
+        # login to get tokens
+        response = api_client.post('/api/v1/accounts/token/', {
+            'username': 'testcandidate',
+            'password': 'testpass123!',
+        }, format='json')
+        refresh_token = response.data['refresh']
+        access_token = response.data['access']
+
+        # logout
+        api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {access_token}')
+        logout_response = api_client.post('/api/v1/accounts/logout/', {
+            'refresh': refresh_token,
+        }, format='json')
+        assert logout_response.status_code == status.HTTP_205_RESET_CONTENT
+
+    def test_blacklisted_token_cannot_refresh(self, api_client, candidate_user):
+        """After logout, refresh token cannot be used to get new access token."""
+        # login
+        response = api_client.post('/api/v1/accounts/token/', {
+            'username': 'testcandidate',
+            'password': 'testpass123!',
+        }, format='json')
+        refresh_token = response.data['refresh']
+        access_token = response.data['access']
+
+        # logout — blacklists the refresh token
+        api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {access_token}')
+        api_client.post('/api/v1/accounts/logout/', {
+            'refresh': refresh_token,
+        }, format='json')
+
+        # try to use the blacklisted refresh token
+        refresh_response = api_client.post('/api/v1/accounts/token/refresh/', {
+            'refresh': refresh_token,
+        }, format='json')
+
+        # should be rejected
+        assert refresh_response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_logout_requires_authentication(self, api_client):
+        """Cannot logout without being authenticated."""
+        response = api_client.post('/api/v1/accounts/logout/', {
+            'refresh': 'some-token',
+        }, format='json')
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_logout_without_refresh_token_returns_400(self, candidate_client):
+        """Logout without providing refresh token returns 400."""
+        response = candidate_client.post('/api/v1/accounts/logout/', {}, format='json')
+        assert response.status_code == status.HTTP_400_BAD_REQUEST

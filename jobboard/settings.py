@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     # third party
     'django_extensions',
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
     'django_filters',
     'drf_spectacular',
     'django_celery_beat',
@@ -162,7 +163,7 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': False,
+    'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_HEADER_TYPES': ('Bearer',),
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
@@ -172,14 +173,42 @@ SIMPLE_JWT = {
 SPECTACULAR_SETTINGS = {
     'TITLE': 'JobBoard API',
     'DESCRIPTION': '''
-        A production-ready job board REST API built with Django and DRF.
+A production-ready job board REST API built with Django and DRF.
 
-        Features:
-        - JWT authentication with role-based access (company / candidate / admin)
-        - Job listing CRUD with advanced filtering and full-text search
-        - Application tracking system
-        - Redis caching for performance
-        - Dockerized with PostgreSQL and Redis
+## Quick Start
+
+**Step 1 — Get a token:**
+
+POST to `/api/v1/accounts/token/` with one of these test accounts:
+
+| Role | Username | Password |
+|---|---|---|
+| Candidate | `alice` | `testpass123` |
+| Company | `mercari` | `testpass123` |
+
+**Step 2 — Authorize:**
+
+Click the **Authorize** button (top right 🔒), paste the `access` token, click Authorize.
+
+**Step 3 — Explore:**
+
+- As **candidate** → apply to jobs, view your applications
+- As **company** → create jobs, review applications, change status
+
+---
+
+## Features
+
+- JWT authentication with token rotation and blacklisting
+- Role-based permissions (company / candidate / admin)
+- Job listings with filtering, search, and pagination
+- Async email notifications via Celery
+- Redis caching with signal-based invalidation
+- 63 pytest tests · 85% coverage
+
+## Source Code
+
+[github.com/Apurvastha/jobboard](https://github.com/Apurvastha/jobboard)
     ''',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,

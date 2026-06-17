@@ -4,6 +4,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 from .throttles import LoginRateThrottle
 from .permissions import IsCandidate
 from .serializers import (
@@ -136,4 +138,50 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
     throttle_classes = [LoginRateThrottle]
 
+
+@extend_schema(
+    tags=['Authentication'],
+    summary='Logout',
+    description='Blacklists the refresh token immediately. '
+                'Client should delete both access and refresh tokens locally.',
+    request={
+        'application/json':{
+            'type': 'object',
+            'properties':{
+                'refresh': {'type': 'string'}
+            },
+            'required': ['refresh']
+        }
+    },
+    responses={
+        205: None,
+        400: None
+    },
+)
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            refresh_token = request.data.get('refresh')
+
+            if not refresh_token:
+                return Response(
+                    {'error': 'Refresh token is required.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            return Response(
+                {'detail': 'Logged out successfully.'},
+                status=status.HTTP_205_RESET_CONTENT
+            )
+        except TokenError:
+            return Response(
+                {
+                    'error': 'Invalid or expired token.'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
