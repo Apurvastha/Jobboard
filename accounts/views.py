@@ -5,8 +5,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
+from django.core.cache import cache
+import time
 from .throttles import LoginRateThrottle
 from .permissions import IsCandidate
 from .serializers import (
@@ -164,6 +166,7 @@ class LogoutView(APIView):
     def post(self, request):
         try:
             refresh_token = request.data.get('refresh')
+            access_token = request.headers.get('Authorization', '').split(' ')[-1]
 
             if not refresh_token:
                 return Response(
@@ -172,6 +175,23 @@ class LogoutView(APIView):
                 )
             token = RefreshToken(refresh_token)
             token.blacklist()
+
+            # Revoke the access token in Redis
+            try:
+                access = AccessToken(access_token)
+                jti = access['jti']
+                exp = access['exp']
+
+                # store in redis until token naturally expires
+                remaining = exp - int(time.time())
+                if remaining > 0:
+                    cache.set(
+                        f'revoked_token:{jti}',
+                        True,
+                        timeout=remaining
+                    )
+            except Exception:
+                pass
 
             return Response(
                 {'detail': 'Logged out successfully.'},
