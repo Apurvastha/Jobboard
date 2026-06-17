@@ -205,7 +205,7 @@ Click the **Authorize** button (top right 🔒), paste the `access` token, click
 - Job listings with filtering, search, and pagination
 - Async email notifications via Celery
 - Redis caching with signal-based invalidation
-- 63 pytest tests · 85% coverage
+- 66 pytest tests · 86% coverage
 
 ## Source Code
 
@@ -220,6 +220,15 @@ Click the **Authorize** button (top right 🔒), paste the `access` token, click
         'filter': True,
     },
     'SECURITY': [{'bearerAuth': []}],
+    'COMPONENTS': {
+        'securitySchemes': {
+            'bearerAuth': {
+                'type': 'http',
+                'scheme': 'bearer',
+                'bearerFormat': 'JWT',
+            }
+        }
+    },
 }
 
 # ── CELERY ────────────────────────────────────────────────────
