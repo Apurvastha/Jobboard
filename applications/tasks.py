@@ -3,6 +3,7 @@ import logging
 from celery import shared_task
 from django.conf import settings
 from django.core.mail import send_mail
+from sentry_sdk.crons import monitor
 
 logger = logging.getLogger(__name__)
 
@@ -129,6 +130,7 @@ JobBoard Team
 
 
 @shared_task(bind=True, max_retries=3)
+@monitor(monitor_slug='remind-unreviewed-applications')
 def remind_unreviewed_applications(self):
     """
     Runs every weekday at 8am.

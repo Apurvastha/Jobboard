@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 @shared_task(bind=True, max_retries=3)
+@monitor(monitor_slug='deactivate-expired-jobs')
 def deactivate_expired_jobs(self):
     """
     Runs every night at midnight.
@@ -56,6 +57,7 @@ def deactivate_expired_jobs(self):
 
 
 @shared_task(bind=True, max_retires=3)
+@monitor(monitor_slug='weekly-job-digest')
 def send_weekly_job_digest(self):
     """
     Runs every Sunday at 9 am.
