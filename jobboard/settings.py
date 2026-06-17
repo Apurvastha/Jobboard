@@ -274,7 +274,7 @@ if SENTRY_DSN:
         ],
         traces_sample_rate=0.1,
         sample_rate=1.0,
-        environment='production' if not DEBUG else 'development',
+        environment=env('SENTRY_ENVIRONMENT', default='production'),
         release=env('RAILWAY_GIT_COMMIT_SHA', default='local'),
         send_default_pii=False,
         attach_stacktrace=True

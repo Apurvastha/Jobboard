@@ -1,24 +1,12 @@
 # jobs/tasks.py
 import logging
-
+import sentry_sdk
+from sentry_sdk.crons import monitor
 from celery import shared_task
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
-
-@shared_task(bind=True, max_retries=3)
-def debug_task(self):
-    """Simple task to verify Celery is working."""
-    logger.info(f"Request: {self.request!r}")
-    return "Celery is working!"
-
-
-@shared_task(bind=True, max_retries=3)
-def add(self, x, y):
-    """Test task — adds two numbers."""
-    logger.info(f"Adding {x} + {y}")
-    return x + y
 
 
 @shared_task(bind=True, max_retries=3)
@@ -158,16 +146,15 @@ Best regards,
 
 
 @shared_task
+@monitor(monitor_slug='cleanup_cache')
 def cleanup_stale_cache():
     """
     Runs every hour.
-    Cleans up any manually tracked cache keys that may have
-    gone stale — lightweight maintenance task.
+    Sentry monitors this task and alerts if it stops running.
     """
     from django.core.cache import cache
 
     # clear the featured jobs cache so it rebuilds fresh every hour
     cache.delete("featured_jobs")
-
     logger.info("Stale cache cleaned up.")
     return "Cache cleanup complete."
