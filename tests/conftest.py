@@ -1,7 +1,7 @@
 import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
-
+from django.core.cache import cache
 from accounts.models import CandidateProfile, CompanyProfile
 from jobs.models import Category, JobListing, Tag
 
@@ -126,3 +126,12 @@ def multiple_job_listings(db, company_user, category):
         )
         jobs.append(job)
     return jobs
+
+
+
+@pytest.fixture(autouse=True)
+def clear_cache():
+    """Clear Redis cache before every test — prevents throttle bleed between tests."""
+    cache.clear()
+    yield
+    cache.clear()

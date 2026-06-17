@@ -173,6 +173,113 @@ class TestJWT:
 
 
 @pytest.mark.django_db
+class TestAuthIntegration:
+    """
+    Tests the full auth flow end-to-end including DB writes.
+    These catch issues like missing migrations that unit tests miss.
+    """
+
+    def test_full_login_flow(self, api_client, candidate_user):
+        """
+        Full login → token stored in DB → refresh → logout.
+        Catches: missing token_blacklist tables, migration issues.
+        """
+        # step 1 — login
+        response = api_client.post('/api/v1/accounts/token/', {
+            'username': 'testcandidate',
+            'password': 'testpass123!',
+        }, format='json')
+        assert response.status_code == status.HTTP_200_OK
+        access = response.data['access']
+        refresh = response.data['refresh']
+
+        # step 2 — use access token on protected endpoint
+        api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {access}')
+        me_response = api_client.get('/api/v1/accounts/me/')
+        assert me_response.status_code == status.HTTP_200_OK
+
+        # step 3 — refresh the token
+        refresh_response = api_client.post('/api/v1/accounts/token/refresh/', {
+            'refresh': refresh,
+        }, format='json')
+        assert refresh_response.status_code == status.HTTP_200_OK
+        new_access = refresh_response.data['access']
+        new_refresh = refresh_response.data['refresh']
+
+        # step 4 — logout blacklists the refresh token
+        api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {new_access}')
+        logout_response = api_client.post('/api/v1/accounts/logout/', {
+            'refresh': new_refresh,
+        }, format='json')
+        assert logout_response.status_code == status.HTTP_205_RESET_CONTENT
+
+        # step 5 — blacklisted token cannot be used again
+        blocked = api_client.post('/api/v1/accounts/token/refresh/', {
+            'refresh': new_refresh,
+        }, format='json')
+        assert blocked.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_company_can_create_and_delete_job(
+        self, api_client, company_user
+    ):
+        """
+        Full company flow — login → create job → soft delete.
+        Catches: permission issues, DB write failures.
+        """
+        # login as company
+        response = api_client.post('/api/v1/accounts/token/', {
+            'username': 'testcompany',
+            'password': 'testpass123!',
+        }, format='json')
+        assert response.status_code == status.HTTP_200_OK
+        access = response.data['access']
+
+        # create a job
+        api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {access}')
+        create_response = api_client.post('/api/v1/jobs/', {
+            'title': 'Integration Test Engineer Tokyo',
+            'description': 'Full integration test job listing for CI verification.',
+            'job_type': 'full_time',
+            'experience_level': 'mid',
+            'location': 'Tokyo',
+            'is_remote': False,
+            'salary_min': 6000000,
+            'salary_max': 9000000,
+        }, format='json')
+        assert create_response.status_code == status.HTTP_201_CREATED
+        job_id = create_response.data['id']
+
+        # soft delete it
+        delete_response = api_client.delete(f'/api/v1/jobs/{job_id}/')
+        assert delete_response.status_code == status.HTTP_204_NO_CONTENT
+
+    def test_candidate_can_apply(
+        self, api_client, candidate_user, job_listing
+    ):
+        """
+        Full candidate flow — login → apply → view application.
+        Catches: application DB write failures.
+        """
+        response = api_client.post('/api/v1/accounts/token/', {
+            'username': 'testcandidate',
+            'password': 'testpass123!',
+        }, format='json')
+        assert response.status_code == status.HTTP_200_OK
+        access = response.data['access']
+
+        api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {access}')
+        apply_response = api_client.post('/api/v1/applications/', {
+            'job': job_listing.id,
+            'cover_letter': 'Integration test application.',
+        }, format='json')
+        assert apply_response.status_code == status.HTTP_201_CREATED
+
+        # verify it appears in their list
+        list_response = api_client.get('/api/v1/applications/')
+        assert list_response.status_code == status.HTTP_200_OK
+        assert list_response.data['count'] >= 1
+
+@pytest.mark.django_db
 class TestLogout:
 
     def test_logout_blacklists_refresh_token(self, api_client, candidate_user):

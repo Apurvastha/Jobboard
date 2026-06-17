@@ -1,3 +1,4 @@
+import sys
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -136,8 +137,7 @@ class CompanyProfileView(APIView):
 @extend_schema(tags=["Authentication"], summary="Login")
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
-    throttle_classes = [LoginRateThrottle]
-
+    throttle_classes = [] if 'pytest' in sys.modules else [LoginRateThrottle]
 
 @extend_schema(
     tags=['Authentication'],

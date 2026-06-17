@@ -264,12 +264,12 @@ GET /api/v1/jobs/?page=2&page_size=10
 docker-compose exec web pytest tests/ -v --cov=. --cov-report=term-missing
 ```
 
-**63 tests passing · 85% coverage**
+**66 tests passing · 86% coverage**
 
 | Area | Tests |
 |---|---|
 | Job listings — CRUD, permissions, filtering, N+1 | 22 tests |
-| Authentication — JWT, registration, logout, profiles | 19 tests |
+| Authentication — JWT, registration, logout, profiles | 22 tests |
 | Applications — apply, status change, permissions | 13 tests |
 | Redis cache — invalidation, hit/miss | 4 tests |
 | Celery tasks — email, job expiry | 5 tests |
@@ -304,8 +304,3 @@ Live at https://jobboard-production-aae7.up.railway.app
 
 Actively in development.
 
-**Roadmap:**
-- [x] Phase 1: Django + DRF backend (complete)
-- [ ] Phase 2: FastAPI microservice
-- [ ] Phase 3: AI backend (RAG pipeline, pgvector, LLM gateway)
-- [ ] Phase 4: System design + interview preparation
