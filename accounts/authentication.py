@@ -17,7 +17,7 @@ class RedisRevokedJWTAuthentication(JWTAuthentication):
         # then check the Redis revocation store (fast, in-memory)
         jti = token['jti']
         if cache.get(f'revoked_token:{jti}'):
-            raise InvalidToken('Token has been removed.')
+            raise InvalidToken('Token has been revoked. Please log in again.')
         return token
 
 class RedisRevokedJWTAuthenticationScheme(OpenApiAuthenticationExtension):

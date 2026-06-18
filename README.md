@@ -64,7 +64,7 @@ A production-ready job board REST API built with Django and Django REST Framewor
 - [x] ViewSets and Routers with custom @action endpoints (featured, similar, applications)
 - [x] django-filter with FilterSet, SearchFilter, OrderingFilter
 - [x] Custom pagination with total pages and page metadata
-- [x] Redis caching with signal-based cache invalidation (categories, job detail, featured)
+- [x] Redis caching with signal-based invalidation and mutex locks to prevent cache stampede
 - [x] Rate limiting — 5/min on login, 100/day unauthenticated, 1000/day authenticated
 - [x] Security headers — HSTS, XSS protection, clickjacking prevention, secure cookies
 - [x] Health check endpoint — lightweight liveness probe at /health/

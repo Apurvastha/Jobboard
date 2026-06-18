@@ -1,3 +1,4 @@
+import time
 from django.core.cache import cache
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.types import OpenApiTypes
@@ -109,18 +110,27 @@ class JobListingViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         pk = kwargs.get("pk")
         cache_key = f"job:{pk}"
+        lock_key = f'job_lock:{pk}'
 
         cached = cache.get(cache_key)
         if cached:
             return Response(cached)
 
-        instance = self.get_object()
-        serializer = self.get_serializer(
-            instance
-        )  # uses get_serializer_class() -> JobListingSerializer
-        data = serializer.data
+        if cache.add(lock_key, '1', timeout=10):
+            try:
+                instance = self.get_object()
+                serializer = self.get_serializer(instance)  # uses get_serializer_class() -> JobListingSerializer
+                data = serializer.data
+                cache.set(cache_key, data, timeout=1800)
+            finally:
+                cache.delete(lock_key)
+        else:
+            time.sleep(0.1)
+            data = cache.get(cache_key)
+            if not data:
+                instance = self.get_object()
+                data = self.get_serializer(instance)
 
-        cache.set(cache_key, data, timeout=1800)
         return Response(data)
 
     @extend_schema(
@@ -143,21 +153,29 @@ class JobListingViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def featured(self, request):
         cache_key = "featured_jobs"
+        lock_key = 'featured_jobs_lock'
+
         cached = cache.get(cache_key)
         if cached:
             return Response(cached)
 
+        if cache.add(lock_key, '1', timeout=10):
+            try:
         # return top 5 highest paying jobs
-        jobs = (
-            JobListing.objects.filter(is_active=True)
-            .select_related("company", "category")
-            .prefetch_related("tags")
-            .order_by("-salary_max")[:5]
-        )
+                jobs = (
+                    JobListing.objects.filter(is_active=True)
+                    .select_related("company", "category")
+                    .prefetch_related("tags")
+                    .order_by("-salary_max")[:5])
+                data = JobListingListSerializer(jobs, many=True).data
+                cache.set(cache_key, data, timeout=3600)
+            finally:
+                cache.delete(lock_key)
+        else:
+            # lock held by another request - wait and read fresh cache
+            time.sleep(0.1)
+            data = cache.get(cache_key) or []
 
-        serializer = JobListingListSerializer(jobs, many=True)
-        data = serializer.data
-        cache.set(cache_key, data, timeout=3600)
         return Response(data)
 
     @extend_schema(
