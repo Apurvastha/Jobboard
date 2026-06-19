@@ -1,8 +1,0 @@
-{
-  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4MTYxNzgzNiwiaWF0IjoxNzgxMDEzMDM2LCJqdGkiOiJkMjkwOWJmNzAzMmM0NTUwOGFlOGM4ZjBiZjFjMjQ0NyIsInVzZXJfaWQiOiIxMiIsInVzZXJuYW1lIjoiYXB1cnZhIiwiZW1haWwiOiJhcHVydmFAdGVzdC5jb20iLCJyb2xlIjoiY2FuZGlkYXRlIn0.-QrkD5udVrJMYQttyYAFenPk1mlZtQDKnh6EBqPnht4",
-  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzgxMDE2NjM2LCJpYXQiOjE3ODEwMTMwMzYsImp0aSI6ImVhZWJiYTNhMzgyYzQ4NDE4NmQ0Y2Q1OTBiYmViMmJmIiwidXNlcl9pZCI6IjEyIiwidXNlcm5hbWUiOiJhcHVydmEiLCJlbWFpbCI6ImFwdXJ2YUB0ZXN0LmNvbSIsInJvbGUiOiJjYW5kaWRhdGUifQ.EwVcynlM_lr17oscqXVQlR-RUnl6XRLt5pprUyCkUAI",
-  "user_id": 12,
-  "username": "apurva",
-  "email": "apurva@test.com",
-  "role": "candidate"
-}
