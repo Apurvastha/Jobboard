@@ -263,6 +263,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'jobs.tasks.cleanup_stale_cache',
         'schedule': crontab(minute=0),
     },
+    'celery-backend-cleanup': {
+        'task': 'celery.backend_cleanup',
+        'schedule': crontab(minute=0, hour='*/1'),
+    }
 }
 
 # ── SENTRY ─────────────────────────────────────────────────────
