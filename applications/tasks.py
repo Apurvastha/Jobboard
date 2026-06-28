@@ -1,9 +1,11 @@
 import logging
-
+import requests
 from celery import shared_task
 from django.conf import settings
 from django.core.mail import send_mail
 from sentry_sdk.crons import monitor
+import environ
+env = environ.Env()
 
 logger = logging.getLogger(__name__)
 
@@ -195,3 +197,45 @@ JobBoard Team
     except Exception as exc:
         logger.error(f"Reminder task failed: {exc}")
         raise self.retry(exc=exc, countdown=300)
+
+
+@shared_task(bind=True, max_retries=3)
+def send_notification_to_service(self, application_id, old_status, new_status):
+    try:
+        from .models import Application
+        
+
+        application = Application.objects.select_related(
+            'job',
+            'candidate',
+            'job__company'
+        ).get(id=application_id)
+
+        job_title = application.job.title
+
+        payload =  {
+            "user_id": application.candidate.id,
+            "notification_type": "status_change",
+            "title": "Application Status Update",
+            "message": f"Your application for {job_title} has been updated from {old_status} to {new_status}",
+            "extra_data":{
+                "application_id": application_id,
+                "old_status": old_status,
+                "new_status": new_status,
+                "job_title": job_title
+            }
+        }
+        notification_url = env('NOTIFICATION_SERVICE_URL').rstrip('/')
+        response = requests.post(url=f"{notification_url}/notifications/", json=payload, timeout=5.0)
+        response.raise_for_status()
+        logger.info(f"Notification sent for application {application_id} status {response.status_code}")
+        return f"Notification sent for application {application_id}"
+
+        
+    except Application.DoesNotExist:
+        logger.warning(f"Application {application_id} not found - skipping")
+        return f"Application {application_id} not found"
+    
+    except Exception as exc:
+        logger.error(f"failed to send to notification service: {exc}")
+        raise self.retry(exc=exc, countdown=60)

@@ -12,6 +12,7 @@ def handle_application_post_save(sender, instance, created, **kwargs):
     from applications.tasks import (
         send_application_received_email,
         send_status_change_email,
+        send_notification_to_service
     )
 
     if created:
@@ -23,6 +24,7 @@ def handle_application_post_save(sender, instance, created, **kwargs):
         transaction.on_commit(
             lambda: send_application_received_email.delay(instance.id)
         )
+        
 
     else:
         # status update — notify the candidate
@@ -45,6 +47,14 @@ def handle_application_post_save(sender, instance, created, **kwargs):
                     new_status,
                 )
             )
+            transaction.on_commit(
+                lambda: send_notification_to_service.delay(
+                    instance.id,
+                    old_status,
+                    new_status,
+                )
+            )
+
 
 
 @receiver(pre_save, sender="applications.Application")
