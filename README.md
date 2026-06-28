@@ -83,6 +83,45 @@ A production-ready job board REST API built with Django and Django REST Framewor
 
 ---
 
+## Notification Service Integration
+
+JobBoard is paired with a dedicated [notification-service](https://github.com/Apurvastha/notification-service) — a FastAPI microservice that handles real-time delivery, notification storage, and WebSocket push.
+
+**Live:** https://notification-service-production-ae8f.up.railway.app/docs
+
+### How they connect
+
+Both services share the same JWT secret. A token issued by JobBoard is valid in the notification-service — candidates log in once and the same token works for WebSocket connections. No separate registration required.
+
+### Real-time flow
+Company changes application status in JobBoard
+
+→ Django signal detects old vs new status
+
+→ Celery fires HTTP POST to notification-service /notifications/
+
+→ Notification stored in PostgreSQL
+
+→ WebSocket push to candidate's active connection
+
+→ Candidate sees update instantly without refreshing
+
+### Connect as a candidate
+
+```bash
+# 1. get a token from JobBoard
+POST /api/v1/accounts/token/  →  copy the access token
+
+# 2. start notification-service locally
+uvicorn app.main:app --reload --port 8001
+
+# 3. connect WebSocket with your JobBoard token
+wscat -c "ws://localhost:8001/ws/notifications?token=<access_token>"
+
+# 4. trigger a status change via JobBoard Swagger
+# → notification arrives in wscat terminal in real time
+```
+
 ## Database Schema
 
 **JobBoard Schema**
@@ -174,6 +213,7 @@ EMAIL_HOST_PASSWORD=your_mailtrap_password
 EMAIL_USE_TLS=True
 DEFAULT_FROM_EMAIL=noreply@jobboard.com
 SENTRY_DSN=your_sentry_dsn  # optional — error monitoring
+NOTIFICATION_SERVICE_URL=your-notification-url
 ```
 
 ---
