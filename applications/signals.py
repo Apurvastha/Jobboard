@@ -13,7 +13,7 @@ def handle_application_post_save(sender, instance, created, **kwargs):
         send_application_received_email,
         send_status_change_email,
         send_notification_to_service
-    )
+)
 
     if created:
         # new application - notify the company
@@ -21,10 +21,8 @@ def handle_application_post_save(sender, instance, created, **kwargs):
             f"New Application signal: {instance.candidate.email}-> {instance.job.title}"
         )
         # transaction.on_commit ensures tasks fires after DB commit
-        transaction.on_commit(
-            lambda: send_application_received_email.delay(instance.id)
-        )
-        
+        send_application_received_email.delay(instance.id)
+
 
     else:
         # status update — notify the candidate
@@ -40,20 +38,18 @@ def handle_application_post_save(sender, instance, created, **kwargs):
                 f"| {old_status} → {new_status}"
             )
 
-            transaction.on_commit(
-                lambda: send_status_change_email.delay(
+            send_status_change_email.delay(
                     instance.id,
                     old_status,
                     new_status,
                 )
-            )
-            transaction.on_commit(
-                lambda: send_notification_to_service.delay(
+
+            send_notification_to_service.delay(
                     instance.id,
                     old_status,
                     new_status,
                 )
-            )
+
 
 
 
