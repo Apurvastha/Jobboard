@@ -1,9 +1,6 @@
 
 FROM python:3.11-slim
 
-# Build: 2026-06-28 try 1
-# Build: 2026-06-28 try 2
-# Build: 2026-06-28 try 2
 
 WORKDIR /app
 
