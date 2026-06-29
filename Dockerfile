@@ -1,6 +1,7 @@
 
 FROM python:3.11-slim
 
+# Build: 2026-06-28
 
 WORKDIR /app
 
@@ -21,6 +22,7 @@ RUN apt-get update \
 # if requirements.txt hasn't changed, this layer is cached
 # and pip install is skipped on rebuild — much faster
 COPY requirements.txt .
+
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # copy the rest of the application code
