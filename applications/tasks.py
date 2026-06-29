@@ -5,6 +5,8 @@ from django.conf import settings
 from django.core.mail import send_mail
 from sentry_sdk.crons import monitor
 import environ
+import time
+import jwt
 env = environ.Env()
 
 logger = logging.getLogger(__name__)
@@ -203,7 +205,7 @@ JobBoard Team
 def send_notification_to_service(self, application_id, old_status, new_status):
     try:
         from .models import Application
-        
+
 
         application = Application.objects.select_related(
             'job',
@@ -225,17 +227,33 @@ def send_notification_to_service(self, application_id, old_status, new_status):
                 "job_title": job_title
             }
         }
+        token = jwt.encode(
+            {
+                "user_id": str(application.candidate.id),
+                "exp": int(time.time()) + 60
+            },
+            settings.SECRET_KEY,
+            algorithm="HS256"
+        )
+
         notification_url = env('NOTIFICATION_SERVICE_URL').rstrip('/')
-        response = requests.post(url=f"{notification_url}/notifications/", json=payload, timeout=5.0)
+
+        response = requests.post(
+            url=f"{notification_url}/notifications/",
+            json=payload,
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=5.0
+        )
+
         response.raise_for_status()
         logger.info(f"Notification sent for application {application_id} status {response.status_code}")
         return f"Notification sent for application {application_id}"
 
-        
+
     except Application.DoesNotExist:
         logger.warning(f"Application {application_id} not found - skipping")
         return f"Application {application_id} not found"
-    
+
     except Exception as exc:
         logger.error(f"failed to send to notification service: {exc}")
         raise self.retry(exc=exc, countdown=60)
