@@ -37,18 +37,27 @@ def handle_application_post_save(sender, instance, created, **kwargs):
                 f"Status change signal: {instance.candidate.email} "
                 f"| {old_status} → {new_status}"
             )
+        try:
 
-            send_status_change_email.delay(
+            result = send_status_change_email.delay(
                     instance.id,
                     old_status,
                     new_status,
                 )
+            logger.info(f"Task dispatched: send_status_change_email | task_id={result.id}")
+        except Exception as e:
+            logger.info(f"FAILED to dispatch send_status_change_email: {e}", exc_info=True)
+        
+        try:
 
-            send_notification_to_service.delay(
+            result = send_notification_to_service.delay(
                     instance.id,
                     old_status,
                     new_status,
                 )
+            logger.info(f"Task dispatched: send_notification_to_service | task_id={result.id}")
+        except Exception as e:
+            logger.info(f"FAILED to dispatch send_notification_to_service: {e}", exc_info=True)
 
 
 
