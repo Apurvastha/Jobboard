@@ -234,8 +234,8 @@ Click the **Authorize** button (top right 🔒), paste the `access` token, click
 }
 
 # ── CELERY ────────────────────────────────────────────────────
-CELERY_BROKER_URL = REDIS_URL
-CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_BROKER_URL = REDIS_URL + "/0"
+CELERY_RESULT_BACKEND = REDIS_URL + "/0"
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json']
