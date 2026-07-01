@@ -125,11 +125,15 @@ class JobListingViewSet(viewsets.ModelViewSet):
             finally:
                 cache.delete(lock_key)
         else:
-            time.sleep(0.1)
-            data = cache.get(cache_key)
+            data = None
+            for _ in range(3):
+                time.sleep(0.01)
+                data = cache.get(cache_key)
+                if data:
+                    break
             if not data:
                 instance = self.get_object()
-                data = self.get_serializer(instance)
+                data = self.get_serializer(instance).data
 
         return Response(data)
 
@@ -159,22 +163,31 @@ class JobListingViewSet(viewsets.ModelViewSet):
         if cached:
             return Response(cached)
 
-        if cache.add(lock_key, '1', timeout=10):
-            try:
-        # return top 5 highest paying jobs
-                jobs = (
+        def fetch_featured_jobs():
+            jobs = (
                     JobListing.objects.filter(is_active=True)
                     .select_related("company", "category")
                     .prefetch_related("tags")
                     .order_by("-salary_max")[:5])
-                data = JobListingListSerializer(jobs, many=True).data
+            return JobListingListSerializer(jobs, many=True).data
+
+        if cache.add(lock_key, '1', timeout=10):
+            try:
+        # return top 5 highest paying jobs
+                data = fetch_featured_jobs()
                 cache.set(cache_key, data, timeout=3600)
             finally:
                 cache.delete(lock_key)
         else:
             # lock held by another request - wait and read fresh cache
-            time.sleep(0.1)
-            data = cache.get(cache_key) or []
+            for _ in range(3):
+                data = None
+                time.sleep(0.01)
+                data = cache.get(cache_key)
+                if data:
+                    break
+            if not data:
+                data = fetch_featured_jobs()
 
         return Response(data)
 

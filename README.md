@@ -64,7 +64,7 @@ A production-ready job board REST API built with Django and Django REST Framewor
 - [x] ViewSets and Routers with custom @action endpoints (featured, similar, applications)
 - [x] django-filter with FilterSet, SearchFilter, OrderingFilter
 - [x] Custom pagination with total pages and page metadata
-- [x] Redis caching with signal-based invalidation and mutex locks to prevent cache stampede
+- [x] Redis caching with signal-based invalidation and mutex locks to prevent cache stampede — load-tested and tuned (see Load Testing section)
 - [x] Rate limiting — 5/min on login, 100/day unauthenticated, 1000/day authenticated
 - [x] Security headers — HSTS, XSS protection, clickjacking prevention, secure cookies
 - [x] Health check endpoint — lightweight liveness probe at /health/
@@ -77,7 +77,7 @@ A production-ready job board REST API built with Django and Django REST Framewor
 - [x] Celery Beat scheduled tasks (nightly job expiry, weekly digest, daily reminders)
 - [x] Application system with full status lifecycle (pending → reviewing → accepted/rejected)
 - [x] Nested endpoint: GET /jobs/{id}/applications/ for company dashboard
-- [x] 63 pytest tests passing — 85% coverage
+- [x] 68 pytest tests passing — 84% coverage
 - [x] GitHub Actions CI pipeline — tests + linting on every push
 - [x] Deployed to Railway with automatic CD pipeline
 
@@ -300,20 +300,124 @@ GET /api/v1/jobs/?page=2&page_size=10
 
 ---
 
-## Testing
+## Load Testing & Performance Investigation
+
+To validate index design, caching behavior, and concurrency handling under
+realistic load — not just assume they work — the app was seeded with
+25,000+ synthetic job postings and load-tested locally with
+[Locust](https://locust.io/), correlated against `EXPLAIN ANALYZE` output
+and container-level resource monitoring (`docker stats`).
+
+### 1. Index verification at scale
+
+At 25,213 rows, `EXPLAIN ANALYZE` was run against every declared index to
+confirm the query planner actually uses them — not just that they exist.
+
+| Query | Plan | Selectivity | Time |
+|---|---|---|---|
+| `is_active + posted_at`, ordered, `LIMIT 20` | Index Scan Backward | ~85% match, but capped by `LIMIT` | **0.45ms** |
+| `location = 'Tokyo'` | Bitmap Heap Scan | ~11% | 2.3ms |
+| `job_type = 'full_time'` | Bitmap Heap Scan | ~25% | 3.5ms |
+| `salary_min >= 6000000` | **Seq Scan** (index skipped — correctly) | ~55% | 6.8ms |
+| `description LIKE '%word%'` | Seq Scan (no index can serve this) | ~0% | 7.7ms |
+
+Two results worth calling out specifically: at ~55% selectivity, Postgres
+correctly ignores the `salary_min` index in favor of a sequential scan —
+verified via planner cost output, not assumed. And no B-tree index can
+serve a leading-wildcard `LIKE` query at all, which is a direct preview of
+why the planned AI-service will need proper full-text search (GIN +
+`pg_trgm` or `tsvector`) rather than relying on Postgres defaults.
+
+### 2. Concurrency load testing — three stages
+
+Tested at 10, 50, and 100 concurrent users against the local Django dev
+server (`manage.py runserver`), flushing Redis before each run for a cold
+cache:
+
+| Concurrent users | Median | p95 | p99 | RPS | Failures |
+|---|---|---|---|---|---|
+| 10 | 31ms | 160ms | 320ms | 27.8 | 0 |
+| 50 | 290ms | 710ms | 1000ms | 56.6 | 0 |
+| 100 | 690ms | 2500ms | 3600ms | 80.7 | **2 / 14,756** |
+
+`docker stats` during the 100-user run showed `jobboard_web` pegged at
+80–150% CPU while Postgres stayed under 2% — confirming the degradation
+was the single-process dev server's thread-per-request model, not the
+database or cache layer.
+
+**The 2 failures were a real, distinct finding:** `FATAL: sorry, too many
+clients already` — Postgres's `max_connections` (default 100) was briefly
+exhausted, because local dev has no `CONN_MAX_AGE` configured, so every
+request opens a fresh DB connection. Production already mitigates this —
+`settings.py` sets `conn_max_age=600` for the Railway/`DATABASE_URL`
+branch — but this surfaced a real local/production parity gap worth
+tracking.
+
+### 3. Cache-stampede lock — isolated testing found and fixed a real bug
+
+General concurrent load isn't a valid test of the cache-stampede mutex
+lock specifically — with ~99 distinct job IDs in the request pool, the
+odds of many requests colliding on the *same* cold key by chance are low.
+A dedicated test was built: every simulated user hits one fixed job ID,
+fired as a single simultaneous burst (not a sustained loop) immediately
+after a cache flush, compared against an unprotected endpoint
+(`/jobs/categories/`, plain cache, no lock) as a control.
+
+The first attempt was confounded by the dev server's queuing overhead
+(3000ms+ tail latencies swamping any signal). Re-run against gunicorn
+(`--workers 2`, matching the production command) isolated the real effect:
+
+| | Protected (`/jobs/{id}/`) | Unprotected (`/jobs/categories/`) |
+|---|---|---|
+| Median (before fix) | **410ms** | 240ms |
+
+The lock was making things *slower*, not faster. Root cause: the
+lock-losing branch used a single fixed `time.sleep(0.1)` regardless of how
+quickly the lock-holder actually finished — every waiter paid the full
+100ms even when data was ready in 10–20ms. This also surfaced a previously
+identified bug in the same code path: the fallback used
+`self.get_serializer(instance)` instead of `.data`, returning a serializer
+instance into `Response()` instead of serialized data.
+
+**Fix:** replaced the fixed sleep with a short retry loop (3 attempts,
+10ms apart, exiting early once data appears), and fixed the missing
+`.data` bug in both `retrieve()` and `featured()` — the same query used to
+be duplicated between the lock-winner and fallback paths in `featured()`,
+so it was also extracted into a single local helper function to keep both
+paths in sync.
+
+| | Before | After | Change |
+|---|---|---|---|
+| Median | 410ms | **310ms** | **−100ms**, matching the fix's mechanism almost exactly |
+| Max | 608ms | 471ms | −137ms |
+
+### What this demonstrates
+
+- Index behavior was verified with real `EXPLAIN ANALYZE` output at
+  production-representative scale, not assumed from documentation.
+- A general load test surfaced a real Postgres connection-exhaustion bug
+  and a local/production configuration gap.
+- A *targeted* test — not just "more load" — was needed to properly
+  isolate and validate the cache-stampede mutex lock, which in turn
+  uncovered and fixed a real correctness bug (`.data`) and a real
+  performance regression (fixed-sleep wait strategy) that general testing
+  had missed entirely.
+
+---
+
 
 ```bash
 docker-compose exec web pytest tests/ -v --cov=. --cov-report=term-missing
 ```
 
-**66 tests passing · 86% coverage**
+**68 tests passing · 84% coverage**
 
 | Area | Tests |
 |---|---|
 | Job listings — CRUD, permissions, filtering, N+1 | 22 tests |
 | Authentication — JWT, registration, logout, profiles | 22 tests |
 | Applications — apply, status change, permissions | 13 tests |
-| Redis cache — invalidation, hit/miss | 4 tests |
+| Redis cache — invalidation, hit/miss, stampede-lock contention | 6 tests |
 | Celery tasks — email, job expiry | 5 tests |
 
 ---
@@ -329,7 +433,7 @@ GitHub Actions — spin up PostgreSQL + Redis
     ↓
 Run migrations + check for missing migrations
     ↓
-Run 63 pytest tests (fail if coverage < 70%)
+Run 68 pytest tests (fail if coverage < 70%)
     ↓
 Run Ruff linter
     ↓
@@ -345,4 +449,3 @@ Live at https://jobboard-production-aae7.up.railway.app
 ## Project Status
 
 Actively in development.
-
