@@ -12,7 +12,8 @@ def handle_application_post_save(sender, instance, created, **kwargs):
     from applications.tasks import (
         send_application_received_email,
         send_status_change_email,
-        send_notification_to_service
+        send_notification_to_service,
+        send_new_application_notification
 )
 
     if created:
@@ -22,6 +23,7 @@ def handle_application_post_save(sender, instance, created, **kwargs):
         )
         # transaction.on_commit ensures tasks fires after DB commit
         send_application_received_email.delay(instance.id)
+        send_new_application_notification.delay(instance.id)
 
 
     else:

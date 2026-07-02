@@ -4,6 +4,7 @@ import pytest
 from rest_framework import status
 
 from applications.models import Application
+from applications.tasks import send_new_application_notification
 from jobs.models import JobListing
 
 
@@ -96,11 +97,24 @@ class TestApplicationSignals:
                 "applications.tasks.send_application_received_email.delay"
             ) as mock_new,
             patch("applications.tasks.send_status_change_email.delay"),
+            patch("applications.tasks.send_notification_to_service.delay")
         ):
             app.status = "reviewing"
             app.save()
 
         mock_new.assert_not_called()
+
+    def test_new_application_notification_task_called(self, candidate_user, job_listing):
+        with(
+            patch("applications.tasks.send_application_received_email.delay"),
+            patch("applications.tasks.send_new_application_notification.delay") as mock_notfy,
+        ):
+            Application.objects.create(
+                candidate=candidate_user,
+                job=job_listing,
+                status="pending"
+            )
+        mock_notfy.assert_called_once()
 
 
 @pytest.mark.django_db
@@ -120,6 +134,22 @@ class TestEmailTasks:
             result = send_application_received_email(app.id)
             assert mock_mail.called
             assert "Email sent" in result
+
+    def test_send_new_application_notification_payload(self, company_user, candidate_user, job_listing):
+        app = Application.objects.create(
+            candidate=candidate_user,
+            job=job_listing,
+            status="pending",
+        )
+
+        with patch("applications.tasks.requests.post") as mock_post:
+            send_new_application_notification(app.id)
+
+        sent_payload = mock_post.call_args.kwargs['json']
+        assert sent_payload['user_id'] == company_user.id
+        assert sent_payload['notification_type'] == 'new_application'
+
+    # what do you check now?
 
     def test_send_status_change_email(self, candidate_user, job_listing):
         from applications.models import Application

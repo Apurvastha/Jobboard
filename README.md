@@ -410,13 +410,13 @@ paths in sync.
 docker-compose exec web pytest tests/ -v --cov=. --cov-report=term-missing
 ```
 
-**68 tests passing · 84% coverage**
+**70 tests passing · 79% coverage**
 
 | Area | Tests |
 |---|---|
 | Job listings — CRUD, permissions, filtering, N+1 | 22 tests |
 | Authentication — JWT, registration, logout, profiles | 22 tests |
-| Applications — apply, status change, permissions | 13 tests |
+| Applications — apply, status change, permissions | 15 tests |
 | Redis cache — invalidation, hit/miss, stampede-lock contention | 6 tests |
 | Celery tasks — email, job expiry | 5 tests |
 

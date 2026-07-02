@@ -257,3 +257,58 @@ def send_notification_to_service(self, application_id, old_status, new_status):
     except Exception as exc:
         logger.error(f"failed to send to notification service: {exc}")
         raise self.retry(exc=exc, countdown=60)
+
+
+@shared_task(bind=True, max_retries=3)
+def send_new_application_notification(self, application_id):
+    try:
+        from .models import Application
+        application = Application.objects.select_related(
+            'job',
+            'job__company',
+            'job__company__user'
+        ).get(id=application_id)
+
+        job_title = application.job.title
+
+        payload =  {
+            "user_id": application.job.company.user.id,
+            "notification_type": "new_application",
+            "title": "New Application",
+            "message": f"You have received a new application for {job_title}",
+            "extra_data":{
+                "application_id": application_id,
+                "job_id": application.job.id,
+                "job_title": job_title
+            }
+        }
+        token = jwt.encode(
+            {
+                "user_id": str(application.job.company.user.id),
+                "exp": int(time.time()) + 60
+            },
+            settings.SECRET_KEY,
+            algorithm="HS256"
+        )
+
+        notification_url = env('NOTIFICATION_SERVICE_URL').rstrip('/')
+
+        response = requests.post(
+            url=f"{notification_url}/notifications/",
+            json=payload,
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=5.0
+        )
+
+        response.raise_for_status()
+        logger.info(f"Notification sent for application {application_id} status {response.status_code}")
+        return f"Notification sent for application {application_id}"
+
+
+    except Application.DoesNotExist:
+        logger.warning(f"Application {application_id} not found - skipping")
+        return f"Application {application_id} not found"
+
+    except Exception as exc:
+        logger.error(f"failed to send to notification service: {exc}")
+        raise self.retry(exc=exc, countdown=60)
