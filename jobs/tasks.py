@@ -56,7 +56,7 @@ def deactivate_expired_jobs(self):
         raise self.retry(exc=exc, countdown=300)  # retry in 5 minutes
 
 
-@shared_task(bind=True, max_retires=3)
+@shared_task(bind=True, max_retries=3)
 @monitor(monitor_slug='weekly-job-digest')
 def send_weekly_job_digest(self):
     """
