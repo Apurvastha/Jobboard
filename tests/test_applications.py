@@ -142,7 +142,10 @@ class TestEmailTasks:
             status="pending",
         )
 
-        with patch("applications.tasks.requests.post") as mock_post:
+        with patch("applications.tasks.env") as mock_env, \
+            patch("applications.tasks.requests.post") as mock_post:
+
+            mock_env.return_value = "http://fake-notification-service"
             send_new_application_notification(app.id)
 
         sent_payload = mock_post.call_args.kwargs['json']
